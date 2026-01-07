@@ -1,0 +1,52 @@
+id,trade_name_en,trade_name_ar,active_ingredient,form,strength
+1,Chlorpromazine,كلوربرومازين,Chlorpromazine,Tablet,5 mg
+2,Furosemide,فوروسيميد,Furosemide,Tablet,40 mg
+3,Nicorandil,نيكورانديل,Nicorandil,Injection,All
+4,Tacrolimus,تاكروليموس,Tacrolimus,Capsule,0.5 mg
+5,Pirfenidone,بيرفِينيدون,Pirfenidone,Tablet,200 mg
+6,Colchicine,كولشيسين,Colchicine,Tablet,0.5 mg
+7,Vigabatrin,فيجاباترِين,Vigabatrin,Tablet,500 mg
+8,Nimodipine,نيموديبين,Nimodipine,Tablet,30 mg
+9,Amphotericin B,أمفوتيريسين B,Amphotericin B,Vial,50 mg
+10,Caffeine + Ergotamine + Analgin,كافيين + إرغوتامين + أنالجين,Caffeine;Ergotamine;Analgin,Tablet,100/1/300 mg
+11,Spironolactone + Furosemide,سبيرونولاكتون + فوروسيميد,Spironolactone;Furosemide,Capsule,50/20 mg
+12,Pentamidine,بنتاميدين,Pentamidine,Injection,300 mg
+13,Phentolamine Mesylate,فينتولامين ميسيلات,Phentolamine Mesylate,Injection,10 mg
+14,Sodium Nitroprusside,نترات الصوديوم,Sodium Nitroprusside,Injection,50 mg/2ml
+15,Pilocarpine Hydrochloride,بيلوكاربين هيدروكلورايد,Pilocarpine Hydrochloride,Tablet,5 mg
+16,Alfacalcidol,ألفاكالسيدول,Alfacalcidol,Injection,2 mcg/ml
+17,Budesonide,بوديزونايد,Budesonide,Monodose,0.25
+18,Prednisone,بريدنيزون,Prednisone,Tablet,5 mg
+19,Indacaterol,إينداسيرول,Indacaterol,Inhaler,0.15
+20,Posaconazole,بوساكونازول,Posaconazole,Tablet,100 mg
+21,Penicillin V,بنسيلين V,Penicillin V,Tablet,1 MIU
+22,Clindamycin,كليندامايسين,Clindamycin,Injection,300 mg
+23,Nifedipine,نيفيديبين,Nifedipine,Capsule,10 mg
+24,Felodipine + Ramipril,فيلوديبين + راميبريل,Felodipine;Ramipril,Tablet,5/5 mg
+25,Bisoprolol + Amlodipine,بيسوبرولول + أملوديبين,Bisoprolol;Amlodipine,Tablet,5/5 mg
+26,Examide TABS,إكسيميد,Unknown,Tablet,10 mg
+27,Nevilob TABS,نيفيلوب,Nevilob Amlodipine,Tablet,5 mg
+28,Cardiolol TABS,كارديلول,Unknown,Tablet,6.25 mg
+29,Atoreza F.C.T,أتوريزا,Unknown,Tablet,10/80 mg
+30,Cetral TABS,سيتال,Cetral,Tablet,500 mg
+31,Diclac PRO.R.TAB,ديلاك,Diclofenac,Tablet,75 mg
+32,Panadol Advance,بانادول,Paracetamol,Tablet,500 mg
+33,Aspo CID TABS,أسبو CID,Unknown,Tablet,75 mg
+34,Sodium Chloride Infusion,سائل كلورايد الصوديوم,Unknown,Infusion,0.9% 500 ml
+35,Ringer Infusion,رينجر,Unknown,Infusion,500 ml
+36,Dextrose Infusion,دكستروز,Unknown,Infusion,25% 500 ml
+37,Nifedipine 20mg,نيفيديبين 20,Nifedipine,Capsule,20 mg
+38,Choleroze Plus 10/20,خوليروز بلس,Unknown,Tablet,10/20 mg
+39,EpirovasTin 20mg,إبيروفاستين,EpioVastin,Tablet,20 mg
+40,Icosalip CAPS,ايكوساليب,Unknown,Capsule,1 g
+41,Symbicort Turbohaler,سيمبيكورت,Unknown,Inhaler,320/9
+42,Praluent Pref.Syringe,برالنت,Unknown,Syringe,150 mg
+43,Anoxicam SUPP,أنوكسيسام,Unknown,Suppository,20 mg
+44,Recoxitro 60mg,ريكوزيترو,Unknown,Tablet,60 mg
+45,Recoxitro 90mg,ريكوزيترو,Unknown,Tablet,90 mg
+46,Picolax Drops,بيكولاكس,Picolax,Drops,7.5 mg
+47,Triocept TABS,تريوسبت,Unknown,Tablet,21 tabs
+48,Prontogest VAG.PESSARIE,برونتوجيست,Unknown,Vaginal pessarie,400 mg
+49,Aspo CID TABS PAED,أسبو CID للأطفال,Unknown,Tablet,75 mg
+50,Ezacard ENTER.C.TABS,إزاكارد,Unknown,Tablet,75 mg
+51,Bronchophane,برونكوفين,Unknown,Infusion,125 ml
