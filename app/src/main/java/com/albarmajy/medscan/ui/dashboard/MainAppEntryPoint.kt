@@ -1,9 +1,14 @@
 package com.albarmajy.medscan.ui.dashboard
 
+import android.os.Build
+import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,31 +33,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
+import com.albarmajy.medscan.ui.customUi.DynamicMedicationTimeline
+import com.albarmajy.medscan.ui.customUi.MedicationTimeline
 import com.albarmajy.medscan.ui.scanner.CameraScannerScreen
 import com.albarmajy.medscan.ui.theme.PrimaryBlue
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import org.koin.androidx.compose.koinViewModel
+import java.time.LocalDateTime
 
+@RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MainAppEntryPoint(viewModel: DashboardViewModel = koinViewModel()) {
     var isCameraVisible by remember { mutableStateOf(false) }
     val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
-    val dashboardViewModel: DashboardViewModel = koinViewModel()
+
 
     var showDialog by remember { mutableStateOf(false) }
     var scannedName by remember { mutableStateOf("") }
     var scannedMedicine by remember { mutableStateOf<MedicineReferenceEntity?>(null) }
 
     if (isCameraVisible) {
+        BackHandler { isCameraVisible = false }
         if (cameraPermissionState.status.isGranted) {
 
             CameraScannerScreen(onTextScanned = { result ->
                 viewModel.onTextScanned(result) { matchedMedicine ->
+                    Log.d("camera","Scanned Medication: $matchedMedicine")
                     scannedMedicine = matchedMedicine
                     scannedName = matchedMedicine.trade_name_ar
                     isCameraVisible = false
@@ -60,16 +72,8 @@ fun MainAppEntryPoint(viewModel: DashboardViewModel = koinViewModel()) {
                 }
             })
 
-//            CameraScannerScreen(onTextScanned = { result ->
-//                if (result.isNotBlank()) {
-//                    scannedName = dashboardViewModel.processScannedText(result)
-//                    isCameraVisible = false
-//                    showDialog = true // إظهار واجهة التأكيد
-//                }
-//            })
         }
         else {
-            // طلب الإذن إذا لم يكن ممنوحاً
             LaunchedEffect(Unit) {
                 cameraPermissionState.launchPermissionRequest()
             }
@@ -78,17 +82,18 @@ fun MainAppEntryPoint(viewModel: DashboardViewModel = koinViewModel()) {
     }
     else {
         DashboardScreen(
-            viewModel = dashboardViewModel,
+            viewModel = viewModel,
             onScanClick = { isCameraVisible = true }
         )
     }
 
     if (showDialog) {
+        BackHandler { isCameraVisible = false }
         AddMedicationDialog(
             medicineName = scannedName,
             onConfirm = { interval ->
 
-                dashboardViewModel.saveMedication(scannedMedicine, interval)
+                viewModel.saveMedication(scannedMedicine, interval)
                 showDialog = false
             },
             onDismiss = { showDialog = false }
@@ -106,13 +111,16 @@ fun AddMedicationDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.Info, contentDescription = null, tint = PrimaryBlue) },
-        title = {
+        icon = {
             Text(
-                text = "تأكيد إضافة الدواء",
+                text = "Dose scheduling",
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
             )
+        },
+        title = {
+
         },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -144,6 +152,22 @@ fun AddMedicationDialog(
                         label = { Text("مره") }
                     )
                 }
+                var doseList by remember {
+                    mutableStateOf(
+                        listOf(
+                            LocalDateTime.now().withHour(10).withMinute(0),
+                            LocalDateTime.now(),
+                            LocalDateTime.now().withHour(22).withMinute(0)
+                        )
+                    )
+                }
+
+                MedicationTimeline(doseList) { i, newTime ->
+                    val updatedList = doseList.toMutableList()
+                    updatedList[i] = newTime
+                    doseList = updatedList
+
+                }
             }
         },
         confirmButton = {
@@ -162,4 +186,11 @@ fun AddMedicationDialog(
         shape = RoundedCornerShape(24.dp),
         containerColor = Color.White
     )
+}
+
+@Preview
+@Composable
+private fun AddMedicationDialogPreview() {
+    AddMedicationDialog("medscan",{},{})
+
 }

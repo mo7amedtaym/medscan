@@ -10,7 +10,6 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val appModule = module {
-    // 1. تعريف قاعدة البيانات (Single Instance)
     single {
         Room.databaseBuilder(
             androidContext(),

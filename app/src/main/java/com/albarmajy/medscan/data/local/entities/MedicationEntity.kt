@@ -7,11 +7,12 @@ import java.time.LocalDateTime
 
 @Entity(tableName = "medications")
 data class MedicationEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey val id: Long = 0,
     val name: String,
     val dosage: String,
-    val recurrenceType: RecurrenceType,
-    val intervalHours: Int,
-    val startDate: LocalDateTime,
+    val category: String? = null,
+//    val recurrenceType: RecurrenceType,
+//    val intervalHours: Int,
+//    val startDate: LocalDateTime,
     val isActive: Boolean = true
 )

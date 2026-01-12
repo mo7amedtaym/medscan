@@ -11,13 +11,14 @@ import com.albarmajy.medscan.data.local.converters.Converters
 import com.albarmajy.medscan.data.local.dao.MedicationDao
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
+import com.albarmajy.medscan.data.local.entities.MedicationPlan
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@Database(entities = [MedicationEntity::class, DoseLogEntity::class, MedicineReferenceEntity::class], version = 2)
+@Database(entities = [MedicationEntity::class, DoseLogEntity::class, MedicationPlan::class, MedicineReferenceEntity::class], version =1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
@@ -33,7 +34,6 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "medscan_db"
                 )
-                    // نستخدم التابع الخاص بنا لملء البيانات
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

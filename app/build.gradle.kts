@@ -87,5 +87,9 @@ dependencies {
 
     implementation("com.google.protobuf:protobuf-javalite:3.25.1")
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
+    implementation ("com.google.code.gson:gson:2.10.1")
+
 }
 

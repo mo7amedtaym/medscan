@@ -1,7 +1,9 @@
 package com.albarmajy.medscan.ui.dashboard
 
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,9 +67,14 @@ import java.util.Locale
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.platform.LocalContext
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
+import com.albarmajy.medscan.data.local.entities.MedicationEntity
 import com.albarmajy.medscan.domain.model.DoseStatus
+import com.albarmajy.medscan.data.local.relation.DoseWithMedication
+import java.time.Duration
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel = koinViewModel(),
@@ -78,12 +85,9 @@ fun DashboardScreen(
 
     val doses by viewModel.todayDoses.collectAsState()
     doses.forEach { it ->
-        Log.d("scheduledTime", it.scheduledTime.toEpochSecond(ZoneOffset.UTC).toString())
+        Log.d("scheduledTime", it.dose.scheduledTime.toEpochSecond(ZoneOffset.UTC).toString())
     }
 
-//    LaunchedEffect(Unit) {
-//
-//    }
 
     Scaffold(
         containerColor = BackgroundLight,
@@ -123,8 +127,8 @@ fun DashboardScreen(
                     Text("View Calendar", color = PrimaryBlue, style = MaterialTheme.typography.labelLarge)
                 }
             }
-            items(doses) { dose ->
-                MedicationItem(dose, viewModel)
+            items(doses, key = { it.dose.id }) { dose ->
+                MedicationItem(dose)
             }
         }
     }
@@ -284,8 +288,16 @@ fun DailyOverviewCard() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
-fun MedicationItem(dose: DoseLogEntity, viewModel: DashboardViewModel) {
+fun MedicationItem(dose: DoseWithMedication) {
+
+    val doseTime = dose.dose.scheduledTime
+    val formatter = DateTimeFormatter.ofPattern("hh:mm a")
+    val formattedTime = doseTime.format(formatter)
+    val now = LocalDateTime.now()
+    val duration = Duration.between(now, doseTime)
+
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
@@ -298,24 +310,24 @@ fun MedicationItem(dose: DoseLogEntity, viewModel: DashboardViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                color = if(dose.status == DoseStatus.TAKEN) SuccessGreen.copy(0.1f) else PrimaryBlue.copy(0.1f),
+                color = if(dose.dose.status == DoseStatus.TAKEN) SuccessGreen.copy(0.1f) else PrimaryBlue.copy(0.1f),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.size(48.dp)
             ) {
                 Icon(
-                    imageVector = if(dose.status == DoseStatus.TAKEN) Icons.Default.CheckCircle else Icons.Default.Notifications,
+                    imageVector = if(dose.dose.status == DoseStatus.TAKEN) Icons.Default.CheckCircle else Icons.Default.Notifications,
                     contentDescription = null,
-                    tint = if(dose.status == DoseStatus.TAKEN) SuccessGreen else PrimaryBlue,
+                    tint = if(dose.dose.status == DoseStatus.TAKEN) SuccessGreen else PrimaryBlue,
                     modifier = Modifier.padding(12.dp)
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text("name", fontWeight = FontWeight.Bold)
-                Text("08:00 AM • Scheduled", color = TextSub, style = MaterialTheme.typography.bodySmall)
+                Text(dose.medication.name, fontWeight = FontWeight.Bold)
+                Text(text = if(duration.toHours()<0 && duration.toSeconds()>0)"${duration.toMinutes()} minutes remaining" else if(duration.toSeconds()<0 && duration.toMinutes()< -10) "missed" else if(duration.toSeconds()<0) "now" else "$formattedTime • Scheduled", color = TextSub, style = MaterialTheme.typography.bodySmall)
             }
-            RadioButton(selected = dose.status == DoseStatus.TAKEN, onClick = null)
+            RadioButton(selected = dose.dose.status == DoseStatus.TAKEN, onClick = null)
         }
     }
 }
@@ -325,13 +337,14 @@ fun BottomNavigationBar() {
     NavigationBar(containerColor = Color.White) {
         NavigationBarItem(icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") }, selected = true, onClick = {})
         NavigationBarItem(icon = { Icon(Icons.Default.DateRange, null) }, label = { Text("Calendar") }, selected = false, onClick = {})
-        Spacer(Modifier.weight(1f)) // مكان الـ FAB
+        Spacer(Modifier.weight(1f)) // FAB
         NavigationBarItem(icon = { Icon(Icons.Default.Search, null) }, label = { Text("Scan") }, selected = false, onClick = {})
         NavigationBarItem(icon = { Icon(Icons.Default.Settings, null) }, label = { Text("Settings") }, selected = false, onClick = {})
     }
 }
 
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview
 @Composable
 private fun DashboardScreenPreview() {
