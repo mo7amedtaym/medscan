@@ -1,20 +1,22 @@
-package com.albarmajy.medscan.ui.dashboard
+package com.albarmajy.medscan.ui.viewModels
 
 import android.util.Log
-import android.widget.Toast
-import androidx.camera.core.impl.utils.ContextUtil.getApplicationContext
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
-import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
-import com.albarmajy.medscan.domain.model.RecurrenceType
+import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.domain.repository.MedicationRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,16 +37,19 @@ class DashboardViewModel(
         initialValue = emptyList()
     )
 
-    fun getMedicationById(id: Long, onResult: (MedicationEntity?) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val medication = repository.getMedicationById(id)
-            withContext(Dispatchers.Main) {
-                onResult(medication)
+    private val _currentMedication = MutableStateFlow<MedicationEntity?>(null)
+    val currentMedication: StateFlow<MedicationEntity?> = _currentMedication.asStateFlow()
+
+    // دالة جلب الدواء حسب الـ ID
+    fun getMedicationById(id: Long) {
+        viewModelScope.launch {
+            // نستخدم IO للتعامل مع قاعدة البيانات
+            val medication = withContext(Dispatchers.IO) {
+                repository.getMedicationById(id)
             }
+            _currentMedication.value = medication
         }
     }
-
-
 
 
     fun saveMedication(medicine: MedicineReferenceEntity?, intervalHours: Int) {
@@ -62,8 +67,8 @@ class DashboardViewModel(
 
                 val doses = (1..3).map { i ->
                     DoseLogEntity(
-                        medicationId = medication.id ,
-                        scheduledTime = now.plusHours((intervalHours * (i-1)).toLong()),
+                        medicationId = medication.id,
+                        scheduledTime = now.plusHours((intervalHours * (i - 1)).toLong()),
                         status = DoseStatus.PENDING
                     )
                 }
@@ -111,5 +116,3 @@ class DashboardViewModel(
 
 
 }
-
-

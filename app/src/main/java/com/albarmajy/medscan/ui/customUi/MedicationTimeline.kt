@@ -160,7 +160,6 @@ fun MedicationTimeline(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun DynamicMedicationTimeline(
     doses: List<LocalDateTime>,
@@ -269,7 +268,6 @@ fun DoseBadge(time: LocalDateTime) {
 }
 
 
-@RequiresApi(Build.VERSION_CODES.Q)
 @Preview
 @Composable
 private fun MedicationTimelinePreview() {

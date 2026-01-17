@@ -16,21 +16,6 @@ class TextRecognitionAnalyzer(
 
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-//    @SuppressLint("UnsafeOptInUsageError")
-//    override fun analyze(imageProxy: ImageProxy) {
-//        val mediaImage = imageProxy.image
-//        if (mediaImage != null) {
-//            val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-//            recognizer.process(image)
-//                .addOnSuccessListener { visionText ->
-//                    onTextDetected(visionText.text)
-//                }
-//                .addOnCompleteListener {
-//                    imageProxy.close()
-//                }
-//        }
-//    }
-
 
     @OptIn(ExperimentalGetImage::class)
     override fun analyze(imageProxy: ImageProxy) {

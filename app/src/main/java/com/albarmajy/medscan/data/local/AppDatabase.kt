@@ -11,14 +11,14 @@ import com.albarmajy.medscan.data.local.converters.Converters
 import com.albarmajy.medscan.data.local.dao.MedicationDao
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
-import com.albarmajy.medscan.data.local.entities.MedicationPlan
+import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@Database(entities = [MedicationEntity::class, DoseLogEntity::class, MedicationPlan::class, MedicineReferenceEntity::class], version =1)
+@Database(entities = [MedicationEntity::class, DoseLogEntity::class, MedicationPlanEntity::class, MedicineReferenceEntity::class], version =1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao

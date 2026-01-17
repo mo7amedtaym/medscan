@@ -17,7 +17,7 @@ import java.time.LocalTime
         )
     ]
 )
-data class MedicationPlan(
+data class MedicationPlanEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val medicationId: Long,
     val startDate: LocalDate,

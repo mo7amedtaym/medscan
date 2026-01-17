@@ -2,7 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("kotlin-kapt")
+    alias(libs.plugins.kotlin.serialization)
+    id("com.google.devtools.ksp") version libs.versions.ksp.get()
 }
 
 android {
@@ -31,11 +32,15 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        jvmToolchain(17)
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.add("-Xjdk-release=17")
+        }
     }
     buildFeatures {
         compose = true
@@ -61,20 +66,21 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("androidx.compose.ui:ui-tooling:1.7.8")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.7.8")
 
     implementation("com.google.mlkit:text-recognition:16.0.0")
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
-    // 1. Navigation for Compose
+    // Navigation for Compose
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
-    // 2. Room Database (التخزين المحلي)
-    val roomVersion = "2.6.1"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    kapt("androidx.room:room-compiler:$roomVersion") // تأكد من إضافة plugin 'kotlin-kapt'
+    // Room Database
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
-    // 3. Google ML Kit (الذكاء الاصطناعي للمسح الضوئي)
-//    implementation("com.google.mlkit:text-recognition-arabic:16.0.0") // يدعم العربية والإنجليزي
+
 
     // 4. CameraX (لتشغيل الكاميرا داخل التطبيق)
     val cameraVersion = "1.3.0"
@@ -90,6 +96,10 @@ dependencies {
 
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation ("com.google.code.gson:gson:2.10.1")
+
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.navigation3.runtime)
+
 
 }
 

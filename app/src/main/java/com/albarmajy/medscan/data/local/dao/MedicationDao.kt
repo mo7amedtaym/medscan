@@ -6,17 +6,26 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import androidx.room.Upsert
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
-import com.albarmajy.medscan.data.local.entities.MedicationPlan
+import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
+import com.albarmajy.medscan.domain.model.DoseStatus
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDateTime
 
 @Dao
 interface MedicationDao {
+
+    //updates
+    @Query("UPDATE dose_logs SET status = :status, actualTime = :actualTime WHERE id = :doseId")
+    suspend fun updateDoseStatus(doseId: Long, status: DoseStatus, actualTime: LocalDateTime?)
+
+
+    @Query("SELECT * FROM medication_plans WHERE isPermanent = 1")
+    suspend fun getAllPermanentPlans(): List<MedicationPlanEntity>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMedication(medication: MedicationEntity): Long
 
@@ -31,7 +40,7 @@ interface MedicationDao {
     suspend fun insertDoseLog(doseLog: DoseLogEntity)
 
     @Insert
-    suspend fun insertMedicationPlan(plan: MedicationPlan)
+    suspend fun insertMedicationPlan(plan: MedicationPlanEntity): Long
 
     @Insert
     suspend fun insertAllDoses(doses: List<DoseLogEntity>)
@@ -52,7 +61,7 @@ interface MedicationDao {
     ): Flow<List<DoseWithMedication>>
 
     @Query("SELECT * FROM medication_plans WHERE medicationId = :medId LIMIT 1")
-    suspend fun getPlanByMedicationId(medId: Long): MedicationPlan?
+    suspend fun getPlanByMedicationId(medId: Long): MedicationPlanEntity?
 
     @Query("DELETE FROM dose_logs WHERE medicationId = :medId AND status = 'PENDING' AND scheduledTime >= :fromTime")
     suspend fun deleteFuturePendingDoses(medId: Long, fromTime: LocalDateTime)
@@ -61,13 +70,19 @@ interface MedicationDao {
     @Transaction
     suspend fun insertFullMedicationData(
         medication: MedicationEntity,
-        plan: MedicationPlan,
+        plan: MedicationPlanEntity,
         doses: List<DoseLogEntity>
     ) {
-        val medId = insertMedication(medication)
-        insertMedicationPlan(plan.copy(medicationId = medId))
-        val dosesWithId = doses.map { it.copy(medicationId = medId) }
-        insertAllDoses(dosesWithId)
+        val medId = if (isMedicationExists(medication.id)) {
+            medication.id
+        } else {
+            insertMedication(medication)
+        }
+
+        val planId = insertMedicationPlan(plan.copy(medicationId = medId))
+
+        val dosesWithIds = doses.map { it.copy(medicationId = medId, planId = planId) }
+        insertAllDoses(dosesWithIds)
     }
 
     @Query("""

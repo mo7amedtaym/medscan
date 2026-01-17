@@ -1,8 +1,7 @@
-package com.albarmajy.medscan.ui.dashboard
+package com.albarmajy.medscan.ui.screens
 
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -35,14 +34,12 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -65,11 +62,11 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.ui.platform.LocalContext
-import com.albarmajy.medscan.data.local.entities.DoseLogEntity
-import com.albarmajy.medscan.data.local.entities.MedicationEntity
 import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
+import com.albarmajy.medscan.ui.viewModels.DashboardViewModel
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -78,9 +75,7 @@ import java.time.ZoneOffset
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel = koinViewModel(),
-    onScanClick: () -> Unit,
-
-) {
+    ) {
     val context = LocalContext.current
 
     val doses by viewModel.todayDoses.collectAsState()
@@ -89,47 +84,47 @@ fun DashboardScreen(
     }
 
 
-    Scaffold(
-        containerColor = BackgroundLight,
-        bottomBar = { BottomNavigationBar() },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onScanClick,
-                containerColor = PrimaryBlue,
-                contentColor = Color.White,
-                shape = CircleShape,
+//    Scaffold(
+//        containerColor = BackgroundLight,
+//        bottomBar = { BottomNavigationBar() },
+//        floatingActionButton = {
+//            FloatingActionButton(
+//                onClick = onScanClick,
+//                containerColor = PrimaryBlue,
+//                contentColor = Color.White,
+//                shape = CircleShape,
+//                modifier = Modifier
+//                    .size(56.dp)
+//                    .offset(y = 40.dp)
+//            ) {
+//                Icon(Icons.Default.AddCircleOutline, contentDescription = "Add", modifier = Modifier.size(32.dp))
+//            }
+//        },
+//        floatingActionButtonPosition = FabPosition.Center
+//    ) { padding ->
+//
+//    }
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp,26.dp,16.dp,16.dp)
+    ) {
+        item { HeaderSection() }
+        item { DailyOverviewCard() }
+        item {
+            Row(
                 modifier = Modifier
-                    .size(56.dp)
-                    .offset(y = 40.dp)
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(32.dp))
+                Text("Your Schedule", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("View Calendar", color = PrimaryBlue, style = MaterialTheme.typography.labelLarge)
             }
-        },
-        floatingActionButtonPosition = FabPosition.Center
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp)
-        ) {
-            item { HeaderSection() }
-            item { DailyOverviewCard() }
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Your Schedule", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("View Calendar", color = PrimaryBlue, style = MaterialTheme.typography.labelLarge)
-                }
-            }
-            items(doses, key = { it.dose.id }) { dose ->
-                MedicationItem(dose)
-            }
+        }
+        items(doses, key = { it.dose.id }) { dose ->
+            MedicationItem(dose)
         }
     }
 }
@@ -332,22 +327,22 @@ fun MedicationItem(dose: DoseWithMedication) {
     }
 }
 
-@Composable
-fun BottomNavigationBar() {
-    NavigationBar(containerColor = Color.White) {
-        NavigationBarItem(icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") }, selected = true, onClick = {})
-        NavigationBarItem(icon = { Icon(Icons.Default.DateRange, null) }, label = { Text("Calendar") }, selected = false, onClick = {})
-        Spacer(Modifier.weight(1f)) // FAB
-        NavigationBarItem(icon = { Icon(Icons.Default.Search, null) }, label = { Text("Scan") }, selected = false, onClick = {})
-        NavigationBarItem(icon = { Icon(Icons.Default.Settings, null) }, label = { Text("Settings") }, selected = false, onClick = {})
-    }
-}
+//@Composable
+//fun BottomNavigationBar() {
+//    NavigationBar(containerColor = Color.White) {
+//        NavigationBarItem(icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") }, selected = true, onClick = {})
+//        NavigationBarItem(icon = { Icon(Icons.Default.DateRange, null) }, label = { Text("Calendar") }, selected = false, onClick = {})
+//        Spacer(Modifier.weight(1f)) // FAB
+//        NavigationBarItem(icon = { Icon(Icons.Default.Search, null) }, label = { Text("Scan") }, selected = false, onClick = {})
+//        NavigationBarItem(icon = { Icon(Icons.Default.Settings, null) }, label = { Text("Settings") }, selected = false, onClick = {})
+//    }
+//}
 
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Preview
 @Composable
 private fun DashboardScreenPreview() {
-    DashboardScreen{  }
-    
+//    DashboardScreen{  }
+
 }

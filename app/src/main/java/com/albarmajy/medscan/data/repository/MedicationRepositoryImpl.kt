@@ -5,7 +5,7 @@ import androidx.room.Transaction
 import com.albarmajy.medscan.data.local.dao.MedicationDao
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
-import com.albarmajy.medscan.data.local.entities.MedicationPlan
+import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
@@ -111,7 +111,7 @@ class MedicationRepositoryImpl(
         }
 
         // 4. حفظ الخطة الجديدة (أو تحديث الحالية)
-        val newPlan = MedicationPlan(
+        val newPlan = MedicationPlanEntity(
             id = existingPlan?.id ?: 0, // إذا كانت موجودة نستخدم نفس الـ ID لتحديثها
             medicationId = medId,
             startDate = startDate,

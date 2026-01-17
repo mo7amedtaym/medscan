@@ -4,7 +4,7 @@ import androidx.room.Room
 import com.albarmajy.medscan.data.local.AppDatabase
 import com.albarmajy.medscan.data.repository.MedicationRepositoryImpl
 import com.albarmajy.medscan.domain.repository.MedicationRepository
-import com.albarmajy.medscan.ui.dashboard.DashboardViewModel
+import com.albarmajy.medscan.ui.viewModels.DashboardViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module

@@ -17,12 +17,20 @@ import java.time.LocalDateTime
             childColumns = ["medicationId"],
             onDelete = ForeignKey.CASCADE,
             onUpdate = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = MedicationPlanEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["planId"],
+            onDelete = ForeignKey.CASCADE,
+            onUpdate = ForeignKey.CASCADE
         )
     ]
 )
 data class DoseLogEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val medicationId: Long,
+    val planId: Long,
     val scheduledTime: LocalDateTime,
     val actualTime: Long? = null,
     val dosage: String? = null,

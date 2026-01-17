@@ -1,4 +1,4 @@
-package com.albarmajy.medscan.ui.dashboard
+package com.albarmajy.medscan.ui.screens
 
 import android.os.Build
 import android.util.Log
@@ -8,16 +8,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,10 +32,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
-import com.albarmajy.medscan.ui.customUi.DynamicMedicationTimeline
 import com.albarmajy.medscan.ui.customUi.MedicationTimeline
-import com.albarmajy.medscan.ui.scanner.CameraScannerScreen
 import com.albarmajy.medscan.ui.theme.PrimaryBlue
+import com.albarmajy.medscan.ui.viewModels.DashboardViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -83,7 +78,6 @@ fun MainAppEntryPoint(viewModel: DashboardViewModel = koinViewModel()) {
     else {
         DashboardScreen(
             viewModel = viewModel,
-            onScanClick = { isCameraVisible = true }
         )
     }
 
@@ -101,6 +95,7 @@ fun MainAppEntryPoint(viewModel: DashboardViewModel = koinViewModel()) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun AddMedicationDialog(
     medicineName: String,
@@ -188,6 +183,7 @@ fun AddMedicationDialog(
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @Preview
 @Composable
 private fun AddMedicationDialogPreview() {
