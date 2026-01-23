@@ -13,7 +13,14 @@ import androidx.compose.ui.platform.LocalContext
 
 
 
-
+//val Typography = Typography(
+//    titleMedium = TextStyle(
+//        fontFamily = FontFamily.Default,
+//        fontWeight = FontWeight.Bold,
+//        fontSize = 18.sp,
+//        color = PrimaryBlue // هنا حددنا اللون الافتراضي لهذا النوع من النصوص
+//    )
+//)
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryBlue,
     secondary = PrimaryBlue,

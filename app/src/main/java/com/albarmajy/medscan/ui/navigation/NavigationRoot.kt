@@ -141,7 +141,6 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
             }
         },
         floatingActionButtonPosition = FabPosition.Center,
-        // لضمان وجود فراغ للـ FAB إذا كان الـ Bottom Nav مفرغاً من المنتصف
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
 
@@ -157,6 +156,7 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
                     is Routes.Scanner -> NavEntry(key) {
                         CameraScannerScreen(onTextScanned = { result ->
                             viewModel.onTextScanned(result) { matchedMedicine ->
+                                viewModel.saveMedication(matchedMedicine)
                                 backStack.removeAt(backStack.size - 1)
                                 backStack.add(Routes.MedicationPlan(matchedMedicine.id.toLong()))
                             }
@@ -168,7 +168,7 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
                             medId = key.medId,
                             onBack = { backStack.removeAt(backStack.lastIndex) },
                             onConfirm = {
-                                // العودة للرئيسية وتصفير الـ Stack
+                                viewModel.saveMedicationPlan(it)
                                 backStack.clear()
                                 backStack.add(Routes.Dashboard)
                             }

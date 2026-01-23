@@ -12,13 +12,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
+import com.albarmajy.medscan.data.local.worker.DoseSystemWorker
 import com.albarmajy.medscan.di.appModule
 import com.albarmajy.medscan.ui.navigation.NavigationRoot
-import com.albarmajy.medscan.ui.screens.MainAppEntryPoint
+import org.koin.androidx.workmanager.koin.workManagerFactory
 import com.albarmajy.medscan.ui.theme.MedScanTheme
 import com.albarmajy.medscan.ui.theme.PrimaryBlue
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext.startKoin
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
@@ -33,7 +41,6 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             MedScanTheme {
-//              MainAppEntryPoint()
                 NavigationRoot()
             }
 
@@ -47,10 +54,39 @@ class BaseApplication : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@BaseApplication)
+            workManagerFactory()
             modules(appModule)
         }
+        setupRecurringWork()
     }
+    private fun setupRecurringWork() {
+        // القيود: العمل سيعمل فقط إذا كانت البطارية ليست منخفضة
+        val constraints = Constraints.Builder()
+            .setRequiresBatteryNotLow(true)
+            .build()
+
+        // إنشاء طلب العمل الدوري (كل 24 ساعة)
+        val workRequest = PeriodicWorkRequestBuilder<DoseSystemWorker>(24, TimeUnit.HOURS)
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.LINEAR,
+                WorkRequest.MIN_BACKOFF_MILLIS,
+                TimeUnit.MILLISECONDS
+            )
+            .build()
+
+        // إرسال المهمة للنظام
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "DoseRenewalWork",
+            ExistingPeriodicWorkPolicy.KEEP, // إذا كانت المهمة موجودة لا تحذفها (تحافظ على التوقيت الأصلي)
+            workRequest
+        )
+    }
+
+
 }
+
+
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {

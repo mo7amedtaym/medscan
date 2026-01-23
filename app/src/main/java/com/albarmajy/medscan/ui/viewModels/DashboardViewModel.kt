@@ -8,16 +8,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
+import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
 import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.domain.repository.MedicationRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -37,13 +42,27 @@ class DashboardViewModel(
         initialValue = emptyList()
     )
 
+    val pendingCount: Flow<Int> = todayDoses.map { list ->
+        list.count { it.dose.status == DoseStatus.PENDING }
+    }
+    val takenCount: Flow<Int> = todayDoses.map { list ->
+        list.count { it.dose.status == DoseStatus.TAKEN }
+    }
+    val skippedCount: Flow<Int> = todayDoses.map { list ->
+        list.count { it.dose.status == DoseStatus.SKIPPED }
+    }
+    val missedCount: Flow<Int> = todayDoses.map { list ->
+        list.count { it.dose.status == DoseStatus.MISSED }
+    }
+
+    val totalCount: Flow<Int> = todayDoses.map { list -> list.size }
+
+
     private val _currentMedication = MutableStateFlow<MedicationEntity?>(null)
     val currentMedication: StateFlow<MedicationEntity?> = _currentMedication.asStateFlow()
 
-    // دالة جلب الدواء حسب الـ ID
     fun getMedicationById(id: Long) {
         viewModelScope.launch {
-            // نستخدم IO للتعامل مع قاعدة البيانات
             val medication = withContext(Dispatchers.IO) {
                 repository.getMedicationById(id)
             }
@@ -52,7 +71,7 @@ class DashboardViewModel(
     }
 
 
-    fun saveMedication(medicine: MedicineReferenceEntity?, intervalHours: Int) {
+    fun saveMedication(medicine: MedicineReferenceEntity?) {
         viewModelScope.launch(Dispatchers.IO) {
             medicine?.let { med ->
                 val now = LocalDateTime.now()
@@ -60,25 +79,27 @@ class DashboardViewModel(
                     id = med.id.toLong(),
                     name = med.trade_name_en,
                     dosage = med.strength,
-//                    recurrenceType = RecurrenceType.FIXED,
-//                    intervalHours = intervalHours,
-//                    startDate = now
+
                 )
 
-                val doses = (1..3).map { i ->
-                    DoseLogEntity(
-                        medicationId = medication.id,
-                        scheduledTime = now.plusHours((intervalHours * (i - 1)).toLong()),
-                        status = DoseStatus.PENDING
-                    )
-                }
-
-                repository.addNewMedication(medication, doses)
+                repository.addNewMedication(medication)
                 withContext(Dispatchers.Main) {
                     Log.d("MedicationSaved", "Medication saved successfully!")
 
                 }
             }
+        }
+    }
+
+    fun saveMedicationPlan(plan: MedicationPlanEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.addNewMedicationWithSchedule(plan,"1 spoonful")
+        }
+    }
+
+    fun updateDoseState(doseId: Long, status: DoseStatus) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.updateDoseStatus(doseId, status)
         }
     }
 

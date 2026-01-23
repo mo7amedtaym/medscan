@@ -337,5 +337,5 @@ fun <T> WheelPicker(
 @Preview
 @Composable
 private fun DoseTimeItemPreview() {
-    DoseTimeItem(index = 1, doseState = DoseUiState(id = 1), onUpdateDose = {})
+    DoseTimeItem(index = 1, doseState = DoseUiState(id = 1, hour = 8), onUpdateDose = {})
 }

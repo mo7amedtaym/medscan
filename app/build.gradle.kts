@@ -59,6 +59,8 @@ dependencies {
     implementation(libs.play.services.mlkit.text.recognition.common)
     implementation(libs.play.services.mlkit.text.recognition)
     implementation(libs.protolite.well.known.types)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.compose.foundation)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -99,6 +101,9 @@ dependencies {
 
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigation3.runtime)
+
+    implementation("io.insert-koin:koin-androidx-workmanager:3.5.0")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
 
 }

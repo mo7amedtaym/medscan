@@ -8,6 +8,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.albarmajy.medscan.data.local.converters.Converters
+import com.albarmajy.medscan.data.local.dao.DoseLogDao
 import com.albarmajy.medscan.data.local.dao.MedicationDao
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
@@ -22,7 +23,7 @@ import kotlinx.coroutines.withContext
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
-
+    abstract fun doseLogDao(): DoseLogDao
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null

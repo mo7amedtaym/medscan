@@ -66,7 +66,11 @@ fun CameraScannerScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         if (cameraPermissionState.status.isGranted) {
             Camera(onTextScanned)
-        } else {
+        }
+        else {
+            LaunchedEffect(Unit) {
+                cameraPermissionState.launchPermissionRequest()
+            }
             Column(
                 modifier = Modifier.fillMaxSize().padding(24.dp),
                 verticalArrangement = Arrangement.Center,
@@ -81,12 +85,10 @@ fun CameraScannerScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(onClick = {
-                    // التحقق: هل الرفض نهائي أم يمكن الطلب مرة أخرى؟
+
                     if (cameraPermissionState.status.shouldShowRationale) {
-                        // يمكن الطلب مرة أخرى (الرفض لم يكن نهائياً بعد)
                         cameraPermissionState.launchPermissionRequest()
                     } else {
-                        // الرفض نهائي، يجب الذهاب للإعدادات
                         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                             data = Uri.fromParts("package", context.packageName, null)
                         }

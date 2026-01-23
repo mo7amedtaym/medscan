@@ -87,7 +87,7 @@ fun MainAppEntryPoint(viewModel: DashboardViewModel = koinViewModel()) {
             medicineName = scannedName,
             onConfirm = { interval ->
 
-                viewModel.saveMedication(scannedMedicine, interval)
+                viewModel.saveMedication(scannedMedicine)
                 showDialog = false
             },
             onDismiss = { showDialog = false }
@@ -130,7 +130,6 @@ fun AddMedicationDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-//                    val intervals = listOf(6, 8, 12)
                     FilterChip(
                         selected = interval == 8,
                         onClick = { interval = 8 },

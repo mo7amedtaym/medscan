@@ -1,5 +1,6 @@
 package com.albarmajy.medscan.ui.screens
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
@@ -62,40 +63,65 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
 import com.albarmajy.medscan.domain.model.DoseUiState
 import com.albarmajy.medscan.ui.customUi.DoseTimeItem
 import com.albarmajy.medscan.ui.theme.BackgroundLight
 import com.albarmajy.medscan.ui.theme.PrimaryBlue
 import com.albarmajy.medscan.ui.theme.TextSub
 import com.albarmajy.medscan.ui.viewModels.DashboardViewModel
+import com.albarmajy.medscan.ui.viewModels.PlanViewModel
 import org.koin.androidx.compose.koinViewModel
+import java.time.LocalDate
 
 @Composable
 fun MedicationPlanScreen(
     medId: Long,
     viewModel: DashboardViewModel = koinViewModel(),
     onBack: () -> Unit,
-    onConfirm: () -> Unit,
+    onConfirm: (MedicationPlanEntity) -> Unit,
 ) {
+    Log.d("PlanScreen", "medId: $medId")
     val medication by viewModel.currentMedication.collectAsState()
 
     LaunchedEffect(medId) {
-        viewModel.getMedicationById(medId)
+        val medication1 =viewModel.getMedicationById(medId)
+        Log.d("PlanScreen", "medId in LaunchedEffect: $medication1")
+
     }
     var doseFrequency by remember { mutableIntStateOf(2) }
     var selectedDuration by remember { mutableStateOf("Fixed") } // Fixed or Permanent
     var daysCount by remember { mutableIntStateOf(7) }
 
-    var dosesList by remember { mutableStateOf(listOf<DoseUiState>()) }
+    var dosesList by remember {
+        mutableStateOf(List(2) { DoseUiState(id = it, hour = 8) })
+    }
+
+    when(doseFrequency){
+        1 -> {
+            dosesList = listOf(DoseUiState(id = 0, hour = 8))
+        }
+        2 ->{
+            dosesList = listOf(DoseUiState(id = 0, hour = 8), DoseUiState(id = 1, hour = 20))
+        }
+        3 ->{
+            dosesList = listOf(DoseUiState(id = 0, hour = 7), DoseUiState(id = 1, hour = 15), DoseUiState(id = 2, hour = 23))
+        }
+        4 ->{
+            dosesList = listOf(DoseUiState(id = 0, hour = 6), DoseUiState(id = 1, hour = 12), DoseUiState(id = 2, hour = 18), DoseUiState(id = 3, hour = 23, minute = 59))
+        }
+    }
 
     LaunchedEffect(doseFrequency) {
         dosesList = (0 until doseFrequency).map { index ->
-            dosesList.getOrNull(index) ?: DoseUiState(id = index)
+            dosesList.getOrNull(index) ?: DoseUiState(id = index, 8)
         }
     }
     Scaffold(
@@ -103,14 +129,21 @@ fun MedicationPlanScreen(
         topBar = {
             PlanTopBar(onBack = onBack){
                 if(medication != null){
-                    onConfirm()
+                    onConfirm(
+                        MedicationPlanEntity(
+                            medicationId = medId,
+                            startDate = LocalDate.now(),
+                            endDate = if (selectedDuration == "Fixed") LocalDate.now().plusDays(daysCount.toLong()) else null,
+                            timesOfDay = dosesList.take(doseFrequency).map { it.toLocalTime() },
+                            isPermanent = selectedDuration == "Permanent"
+                        )
+                    )
                 }
             }
         },
-//        bottomBar = {
-//            SaveScheduleButton(onClick = onConfirm)
-//        }
+
     ) { padding ->
+        Log.d("PlanScreen", "Medication: $medication")
         if (medication == null) {
 
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -130,7 +163,7 @@ fun MedicationPlanScreen(
                 item {
                     Text(
                         "Daily Dose Frequency",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -143,15 +176,15 @@ fun MedicationPlanScreen(
                 item {
                     Text(
                         "Set Dose Times",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)
                     )
                 }
 
                 items(
-                    count = doseFrequency,
-                    key = { index -> "dose_$index" } // أضف هذا السطر لضمان استقرار القائمة
+                    count = dosesList.size,
+                    key = { index -> "dose_${dosesList[index].id}" }
                 ) { index ->
                     DoseTimeItem(
                         index = index + 1,
@@ -326,36 +359,6 @@ fun FrequencySelector(selectedFrequency: Int, onFrequencySelected: (Int) -> Unit
 
 }
 
-//@Composable
-//fun SaveScheduleButton(onClick: () -> Unit) {
-//    Box(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .background(
-//                Brush.verticalGradient(
-//                    colors = listOf(Color.Transparent, BackgroundLight),
-//                    startY = 0f,
-//                    endY = 50f
-//                )
-//            )
-//            .padding(16.dp)
-//    ) {
-//        Button(
-//            onClick = onClick,
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(56.dp),
-//            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-//            shape = RoundedCornerShape(24.dp),
-//            elevation = ButtonDefaults.buttonElevation(8.dp)
-//        ) {
-//            Icon(Icons.Default.Verified, null)
-//            Spacer(modifier = Modifier.width(8.dp))
-//            Text("Save Schedule & Activate", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-//        }
-//    }
-//}
-
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun PlanTopBar(onBack: () -> Unit, onConfirm: () -> Unit) {
@@ -385,7 +388,8 @@ fun PlanTopBar(onBack: () -> Unit, onConfirm: () -> Unit) {
             TextButton(onClick = onConfirm) {
                 Text("Confirm", color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
             }
-        }
+        },
+
     )
 }
 
@@ -412,7 +416,7 @@ fun DurationPicker(
     Column(modifier = Modifier.padding(top = 24.dp)) {
         Text(
             "Treatment Duration",
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )

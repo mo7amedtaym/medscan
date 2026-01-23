@@ -22,7 +22,6 @@ interface MedicationDao {
     @Query("UPDATE dose_logs SET status = :status, actualTime = :actualTime WHERE id = :doseId")
     suspend fun updateDoseStatus(doseId: Long, status: DoseStatus, actualTime: LocalDateTime?)
 
-
     @Query("SELECT * FROM medication_plans WHERE isPermanent = 1")
     suspend fun getAllPermanentPlans(): List<MedicationPlanEntity>
 
@@ -35,7 +34,6 @@ interface MedicationDao {
     @Query("SELECT * FROM medications WHERE id = :id")
     suspend fun getMedicationById(id: Long): MedicationEntity?
 
-
     @Insert
     suspend fun insertDoseLog(doseLog: DoseLogEntity)
 
@@ -47,7 +45,6 @@ interface MedicationDao {
 
     @Query("SELECT * FROM medications WHERE isActive = 1")
     fun getAllActiveMedications(): Flow<List<MedicationEntity>>
-
 
     @Transaction
     @Query("""
@@ -65,7 +62,6 @@ interface MedicationDao {
 
     @Query("DELETE FROM dose_logs WHERE medicationId = :medId AND status = 'PENDING' AND scheduledTime >= :fromTime")
     suspend fun deleteFuturePendingDoses(medId: Long, fromTime: LocalDateTime)
-
 
     @Transaction
     suspend fun insertFullMedicationData(
@@ -94,9 +90,6 @@ interface MedicationDao {
     @Update
     suspend fun updateDoseLog(doseLog: DoseLogEntity)
 
-
-
-    //references side
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllReferences(references: List<MedicineReferenceEntity>)
 
@@ -109,4 +102,16 @@ interface MedicationDao {
     suspend fun searchMedicine(query: String): List<MedicineReferenceEntity>
 
     companion object
+}
+
+@Dao
+interface DoseLogDao {
+    @Query("SELECT scheduledTime FROM dose_logs WHERE planId = :planId ORDER BY scheduledTime DESC LIMIT 1")
+    suspend fun getLastDoseTime(planId: Long): LocalDateTime?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAllDoses(doses: List<DoseLogEntity>)
+
+    @Query("UPDATE dose_logs SET status = :newStatus, actualTime = :currentTime WHERE id = :doseId")
+    suspend fun updateDoseStatus(doseId: Long, newStatus: DoseStatus, currentTime: LocalDateTime = LocalDateTime.now())
 }

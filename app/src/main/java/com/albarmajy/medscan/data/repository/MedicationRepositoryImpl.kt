@@ -2,6 +2,7 @@ package com.albarmajy.medscan.data.repository
 
 import android.util.Log
 import androidx.room.Transaction
+import com.albarmajy.medscan.data.local.dao.DoseLogDao
 import com.albarmajy.medscan.data.local.dao.MedicationDao
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
@@ -11,12 +12,14 @@ import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
 import com.albarmajy.medscan.domain.repository.MedicationRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 class MedicationRepositoryImpl(
-    private val medicationDao: MedicationDao
+    private val medicationDao: MedicationDao,
+    private val doseDao: DoseLogDao
 ) : MedicationRepository {
 
     override fun getAllMedications(): Flow<List<MedicationEntity>> =
@@ -31,24 +34,28 @@ class MedicationRepositoryImpl(
     ): Flow<List<DoseWithMedication>> {
 
         Log.d("MedicationRepositoryImpl", "getTodayDoses: $startOfDay, $endOfDay")
-        return medicationDao.getDosesWithMedicationForToday(startOfDay, endOfDay)
+        return medicationDao.getDosesWithMedicationForToday(startOfDay, endOfDay).map { list ->
+            list.map { dose ->
+                if (dose.dose.scheduledTime.isBefore(LocalDateTime.now().minusMinutes(15)) &&
+                    dose.dose.status == DoseStatus.PENDING) {
+                    updateDoseStatus(dose.dose.id, DoseStatus.MISSED)
+                }
+                dose
+            }
+        }
     }
 
     override fun getDoses(): Flow<List<DoseLogEntity>> {
         return medicationDao.getDoses()
     }
 
-    override suspend fun addNewMedication(medication: MedicationEntity, doses: List<DoseLogEntity>) {
+    override suspend fun addNewMedication(medication: MedicationEntity) {
         val isMedicationExists = medicationDao.isMedicationExists(medication.id)
-        var medId = medication.id
         if (!isMedicationExists){
-            medId = medicationDao.insertMedication(medication)
+            medicationDao.insertMedication(medication)
         }
 
-        doses.forEach { dose ->
-            Log.d("DoseLogEntity", "dose: $dose")
-            medicationDao.insertDoseLog(dose.copy(medicationId = medId))
-        }
+
     }
 
     override suspend fun updateDoseStatus(doseLog: DoseLogEntity) {
@@ -65,63 +72,88 @@ class MedicationRepositoryImpl(
     }
 
 
-    @Transaction
+
     override suspend fun addNewMedicationWithSchedule(
-        medication: MedicationEntity,
-        selectedTimes: List<LocalTime>,
-        startDate: LocalDate,
-        endDate: LocalDate?,
-        isPermanent: Boolean
+        plan: MedicationPlanEntity,
+        dosagePerDose: String?
     ) {
+        val planId = medicationDao.insertMedicationPlan(plan)
 
-        val isMedicationExists = medicationDao.isMedicationExists(medication.id)
-        var medId = medication.id
-        if (!isMedicationExists){
-            medId = medicationDao.insertMedication(medication)
+        val calculationEndDate = if (plan.isPermanent) {
+            plan.startDate.plusDays(30)
+        } else {
+            plan.endDate ?: plan.startDate.plusDays(30)
         }
 
-        val existingPlan = medicationDao.getPlanByMedicationId(medId)
+        val generatedDoses = mutableListOf<DoseLogEntity>()
+        var currentDay = plan.startDate
 
-        if (existingPlan != null) {
-            // سيناريو أ: تحديث الخطة القديمة
-            // نقوم بمسح الجرعات المستقبلية (التي لم تؤخذ بعد) لنبدأ الخطة الجديدة من الآن
-            medicationDao.deleteFuturePendingDoses(medId, LocalDateTime.now())
-        }
-
-        // 3. توليد الجرعات الجديدة (نفس الـ Loop السابق)
-        val dosesToGenerate = mutableListOf<DoseLogEntity>()
-        val finalEndDate = endDate ?: startDate.plusMonths(1)
-        var currentDay = startDate
-
-        while (!currentDay.isAfter(finalEndDate)) {
-            selectedTimes.forEach { time ->
-                val scheduledDateTime = LocalDateTime.of(currentDay, time)
-                // لا نولد جرعات في الماضي إذا كان التاريخ هو اليوم
-                if (scheduledDateTime.isAfter(LocalDateTime.now())) {
-                    dosesToGenerate.add(
-                        DoseLogEntity(
-                            medicationId = medId,
-                            scheduledTime = scheduledDateTime,
-                            status = DoseStatus.PENDING
-                        )
+        while (!currentDay.isAfter(calculationEndDate)) {
+            plan.timesOfDay.forEach { time ->
+                generatedDoses.add(
+                    DoseLogEntity(
+                        medicationId = plan.medicationId,
+                        planId = planId,
+                        scheduledTime = LocalDateTime.of(currentDay, time),
+                        dosage = dosagePerDose,
+                        status = DoseStatus.PENDING
                     )
-                }
+                )
             }
             currentDay = currentDay.plusDays(1)
         }
 
-        // 4. حفظ الخطة الجديدة (أو تحديث الحالية)
-        val newPlan = MedicationPlanEntity(
-            id = existingPlan?.id ?: 0, // إذا كانت موجودة نستخدم نفس الـ ID لتحديثها
-            medicationId = medId,
-            startDate = startDate,
-            endDate = endDate,
-            timesOfDay = selectedTimes,
-            isPermanent = isPermanent
-        )
+        medicationDao.insertAllDoses(generatedDoses)
+    }
 
-        medicationDao.insertMedicationPlan(newPlan)
-        medicationDao.insertAllDoses(dosesToGenerate)
+    override suspend fun updateDoseStatus(
+        doseId: Long,
+        newStatus: DoseStatus
+    ) {
+        doseDao.updateDoseStatus(doseId, newStatus)
+    }
+
+    override suspend fun getAllPermanentPlans(): List<MedicationPlanEntity> {
+        return medicationDao.getAllPermanentPlans()
+    }
+
+    override suspend fun getLastDoseDateForPlan(planId: Long): LocalDate? {
+        doseDao.getLastDoseTime(planId)?.let {
+            return it.toLocalDate()
+        }
+        return null
+    }
+
+    override suspend fun generateDosesRange(
+        plan: MedicationPlanEntity,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ) {
+        val generatedDoses = mutableListOf<DoseLogEntity>()
+        var currentDay = startDate
+
+        val today = LocalDate.now()
+        if (currentDay.isBefore(today)) currentDay = today
+
+        while (!currentDay.isAfter(endDate)) {
+            plan.timesOfDay.forEach { time ->
+                generatedDoses.add(
+                    DoseLogEntity(
+                        medicationId = plan.medicationId,
+                        planId = plan.id,
+                        scheduledTime = LocalDateTime.of(currentDay, time),
+                        status = DoseStatus.PENDING
+                    )
+                )
+            }
+            currentDay = currentDay.plusDays(1)
+        }
+
+        if (generatedDoses.isNotEmpty()) {
+            doseDao.insertAllDoses(generatedDoses)
+        }
+
+
     }
 
 }

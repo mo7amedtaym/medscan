@@ -4,10 +4,10 @@ import java.time.LocalTime
 
 data class DoseUiState(
     val id: Int,
-    val hour: Int = 8,
+    val hour: Int,
     val minute: Int = 0,
     val amPm: String = "AM",
-    val amount: Int = 1 // عدد الأقراص كرقـم لسهولة الحساب
+    val amount: Int = 1
 ){
     fun toLocalTime(): LocalTime {
         val hour24 = when {

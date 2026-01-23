@@ -32,7 +32,7 @@ data class DoseLogEntity(
     val medicationId: Long,
     val planId: Long,
     val scheduledTime: LocalDateTime,
-    val actualTime: Long? = null,
+    val actualTime: LocalDateTime? = null,
     val dosage: String? = null,
     val status: DoseStatus = DoseStatus.PENDING
 
