@@ -1,8 +1,13 @@
 package com.albarmajy.medscan
 
+import android.app.AlarmManager
 import android.app.Application
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -12,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -20,6 +26,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkRequest
 import com.albarmajy.medscan.data.local.worker.DoseSystemWorker
 import com.albarmajy.medscan.di.appModule
+import com.albarmajy.medscan.notification.NotificationHelper
 import com.albarmajy.medscan.ui.navigation.NavigationRoot
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import com.albarmajy.medscan.ui.theme.MedScanTheme
@@ -46,12 +53,14 @@ class MainActivity : ComponentActivity() {
 
         }
     }
+
 }
 
 
 class BaseApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        NotificationHelper.createNotificationChannel(this)
         startKoin {
             androidContext(this@BaseApplication)
             workManagerFactory()

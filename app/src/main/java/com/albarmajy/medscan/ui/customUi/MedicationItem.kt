@@ -145,7 +145,18 @@ fun MedicationItem(
                     when {
                         dose.dose.status == DoseStatus.TAKEN -> getTakenStatusText(dose.dose.actualTime)
                         dose.dose.status == DoseStatus.SKIPPED -> "Skipped - Scheduled at ${doseTime.format(formatter)}"
-                        isMissed -> "Missed - Scheduled at ${doseTime.format(formatter)}"
+                        dose.dose.status == DoseStatus.MISSED  -> {
+                            val duration = Duration.between(doseTime, now)
+                            val minutes = duration.toMinutes()
+                            val hours = duration.toHours()
+
+                            val timeAgoText = when {
+                                minutes < 60 -> "$minutes minutes ago"
+                                else -> "$hours hours ago"
+                            }
+                           return@remember timeAgoText
+
+                        }
                         isDoseWindow -> "Time to take it (Now)"
                         isTooEarly -> "Starts in ${minutesDifference / 60}h ${minutesDifference % 60}m"
                         else -> "${doseTime.format(DateTimeFormatter.ofPattern("hh:mm a"))} • Scheduled"

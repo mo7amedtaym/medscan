@@ -28,5 +28,5 @@ val appModule = module {
 
     single<MedicationRepository> { MedicationRepositoryImpl(get(), get()) }
 
-    viewModel { DashboardViewModel(get()) }
+    viewModel { DashboardViewModel(get(), get()) }
 }

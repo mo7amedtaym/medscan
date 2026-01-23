@@ -86,7 +86,7 @@ fun MedicationPlanScreen(
     medId: Long,
     viewModel: DashboardViewModel = koinViewModel(),
     onBack: () -> Unit,
-    onConfirm: (MedicationPlanEntity) -> Unit,
+    onConfirm: (MedicationPlanEntity, String) -> Unit,
 ) {
     Log.d("PlanScreen", "medId: $medId")
     val medication by viewModel.currentMedication.collectAsState()
@@ -136,7 +136,8 @@ fun MedicationPlanScreen(
                             endDate = if (selectedDuration == "Fixed") LocalDate.now().plusDays(daysCount.toLong()) else null,
                             timesOfDay = dosesList.take(doseFrequency).map { it.toLocalTime() },
                             isPermanent = selectedDuration == "Permanent"
-                        )
+                        ),
+                        medication!!.name
                     )
                 }
             }
@@ -511,7 +512,7 @@ fun DurationCard(
 private fun MedicationPlanScreenPreview() {
     MedicationPlanScreen(
         medId = 1,
-        onConfirm = {},
+        onConfirm = {} as (MedicationPlanEntity, String) -> Unit,
         onBack = {}
     )
 }

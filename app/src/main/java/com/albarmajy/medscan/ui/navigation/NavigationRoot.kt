@@ -167,8 +167,8 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
                         MedicationPlanScreen(
                             medId = key.medId,
                             onBack = { backStack.removeAt(backStack.lastIndex) },
-                            onConfirm = {
-                                viewModel.saveMedicationPlan(it)
+                            onConfirm = { it, name ->
+                                viewModel.saveMedicationPlan(it, name)
                                 backStack.clear()
                                 backStack.add(Routes.Dashboard)
                             }
