@@ -1,5 +1,6 @@
 package com.albarmajy.medscan.ui.screens
 
+import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -7,9 +8,11 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -55,25 +58,27 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
+import com.albarmajy.medscan.scheduler.DoseAlarmReceiver
 import com.albarmajy.medscan.ui.customUi.MedicationItem
 import com.albarmajy.medscan.ui.theme.FailureRed
 import com.albarmajy.medscan.ui.viewModels.DashboardViewModel
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.jvm.java
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel = koinViewModel(),
+    onCalenderClicked: () -> Unit
     ) {
-    val context = LocalContext.current
-
     val doses by viewModel.todayDoses.collectAsState()
     doses.forEach { it ->
         Log.d("scheduledTime", it.dose.scheduledTime.toEpochSecond(ZoneOffset.UTC).toString())
@@ -96,7 +101,7 @@ fun DashboardScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Your Schedule", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("View Calendar", color = PrimaryBlue, style = MaterialTheme.typography.labelLarge)
+                Text("View Calendar", color = PrimaryBlue, style = MaterialTheme.typography.labelLarge, modifier = Modifier.clickable { onCalenderClicked() })
             }
         }
         items(doses, key = { it.dose.id }) { dose ->
@@ -122,160 +127,8 @@ fun HeaderSection() {
 }
 
 @Composable
-fun DailyOverviewCard1(viewModel: DashboardViewModel ) {
-    val total by viewModel.totalCount.collectAsState(initial = 0)
-    val pending by viewModel.pendingCount.collectAsState(initial = 0)
-    val taken by viewModel.takenCount.collectAsState(initial = 0)
-    val progress = if (total > 0) taken.toFloat() / total.toFloat() else 0f
-    val today = LocalDate.now()
-
-    val formatter = DateTimeFormatter.ofPattern(
-        "EEEE, MMM d",
-        Locale.ENGLISH
-    )
-
-    val formattedDate = today.format(formatter)
-
-    Box(modifier = Modifier.fillMaxWidth()) {
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .align(Alignment.TopEnd)
-                .offset(x = 40.dp, y = (-40).dp)
-                .clip(CircleShape)
-                .background(PrimaryBlue.copy(alpha = 0.15f))
-                .zIndex(1f)
-        )
-        Card(
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(24.dp),
-            elevation = CardDefaults.cardElevation(2.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .zIndex(2f)
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            PrimaryBlue.copy(alpha = 0.25f),
-                            Color.Transparent
-                        )
-                    )
-                )
-            ,
-
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column() {
-                        Text(
-                            "Today's Overview",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextSub
-                        )
-                        Text(
-                            text=formattedDate,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                    Label(text = "$pending Remining")
-
-                }
-                Spacer(modifier = Modifier.height(14.dp))
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
-                        CircularProgressIndicator(
-                            progress = 1f,
-                            color = Color(0x14575757),
-                            strokeWidth = 8.dp,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        CircularProgressIndicator(
-                            progress = progress,
-                            color = PrimaryBlue,
-                            strokeWidth = 8.dp,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        Text("${(progress*100).toInt()}%", fontWeight = FontWeight.Bold)
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            Text(
-                                "Taken",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextSub
-                            )
-                            Text(
-                                if (taken>1)"$taken doses" else "$taken dose",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                        LineProgressIndicator(
-                            progress = if (total > 0) taken.toFloat() / total.toFloat() else 0f,
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            Text(
-                                "Upcoming",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextSub
-                            )
-                            Text(
-                                if (pending>1)"$pending doses" else "$pending dose",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                        LineProgressIndicator(
-                            progress = if (total > 0) pending.toFloat() / total.toFloat() else 0f,
-                            color = PrimaryBlue
-                        )
-
-                    }
-                }
-
-            }
-        }
-    }
-}
-
-
-
-
-
-@Composable
 fun DailyOverviewCard(viewModel: DashboardViewModel) {
+    val context = LocalContext.current
     val total by viewModel.totalCount.collectAsState(initial = 0)
     val pending by viewModel.pendingCount.collectAsState(initial = 0)
     val taken by viewModel.takenCount.collectAsState(initial = 0)
@@ -299,7 +152,7 @@ fun DailyOverviewCard(viewModel: DashboardViewModel) {
     )
     val animatedFailureProgress by animateFloatAsState(
         targetValue = failureProgress+ targetProgress,
-        animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
         label = "FailProgress"
     )
 
@@ -337,7 +190,6 @@ fun DailyOverviewCard(viewModel: DashboardViewModel) {
                 modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // الصف العلوي (العنوان والتاريخ)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -346,12 +198,13 @@ fun DailyOverviewCard(viewModel: DashboardViewModel) {
                         Text("Today's Overview", style = MaterialTheme.typography.labelSmall, color = TextSub)
                         Text(text = formattedDate, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     }
+
                     val isDone = taken == total
                     val failure = skipped + missed !=0
                     if (isDone) {
                         Label(text = "Done")
                     }
-                    else{
+                    else if(failure){
                         if (skipped == 0){
                             Label(text = "$missed Missed", color = FailureRed)
                         }
@@ -443,51 +296,6 @@ fun ProgressDataRow(label: String, count: Int, progress: Float, color: Color) {
 
     }
 }
-
-@RequiresApi(Build.VERSION_CODES.S)
-@Composable
-fun MedicationItem1(dose: DoseWithMedication, takenState: ()-> Unit, skippedState: ()-> Unit,) {
-
-    val doseTime = dose.dose.scheduledTime
-    val formatter = DateTimeFormatter.ofPattern("hh:mm a")
-    val formattedTime = doseTime.format(formatter)
-    val now = LocalDateTime.now()
-    val duration = Duration.between(now, doseTime)
-
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                color = if(dose.dose.status == DoseStatus.TAKEN) SuccessGreen.copy(0.1f) else PrimaryBlue.copy(0.1f),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.size(48.dp)
-            ) {
-                Icon(
-                    imageVector = if(dose.dose.status == DoseStatus.TAKEN) Icons.Default.CheckCircle else Icons.Default.Notifications,
-                    contentDescription = null,
-                    tint = if(dose.dose.status == DoseStatus.TAKEN) SuccessGreen else PrimaryBlue,
-                    modifier = Modifier.padding(12.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(dose.medication.name, fontWeight = FontWeight.Bold)
-                Text(text = if(duration.toHours()<0 && duration.toSeconds()>0)"${duration.toMinutes()} minutes remaining" else if(duration.toSeconds()<0 && duration.toMinutes()< -10) "missed" else if(duration.toSeconds()<0) "now" else "$formattedTime • Scheduled", color = TextSub, style = MaterialTheme.typography.bodySmall)
-            }
-            RadioButton(selected = dose.dose.status == DoseStatus.TAKEN, onClick = null)
-        }
-    }
-}
-
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Preview

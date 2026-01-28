@@ -8,10 +8,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +41,23 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val requestPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (!isGranted) {
+                Toast.makeText(applicationContext, "notifications not work", Toast.LENGTH_SHORT).show()
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (!alarmManager.canScheduleExactAlarms()) {
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            startActivity(intent)
+        }
+
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(
@@ -69,12 +88,9 @@ class BaseApplication : Application() {
         setupRecurringWork()
     }
     private fun setupRecurringWork() {
-        // القيود: العمل سيعمل فقط إذا كانت البطارية ليست منخفضة
         val constraints = Constraints.Builder()
             .setRequiresBatteryNotLow(true)
             .build()
-
-        // إنشاء طلب العمل الدوري (كل 24 ساعة)
         val workRequest = PeriodicWorkRequestBuilder<DoseSystemWorker>(24, TimeUnit.HOURS)
             .setConstraints(constraints)
             .setBackoffCriteria(

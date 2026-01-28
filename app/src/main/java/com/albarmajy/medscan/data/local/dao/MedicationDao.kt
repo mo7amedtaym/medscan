@@ -9,6 +9,7 @@ import androidx.room.Update
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
 import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
+import com.albarmajy.medscan.data.local.relation.MedicationWithPlan
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
 import com.albarmajy.medscan.domain.model.DoseStatus
@@ -18,7 +19,28 @@ import java.time.LocalDateTime
 @Dao
 interface MedicationDao {
 
-    //updates
+    @Transaction
+    @Query("SELECT * FROM medications WHERE id = :medId LIMIT 1")
+    fun getMedicationWithPlanById(medId: Long): Flow<MedicationWithPlan?>
+
+    @Transaction
+    @Query("SELECT * FROM medications WHERE isActive = 1 ORDER BY createdAt DESC")
+    fun getActiveMedicationsWithPlans(): Flow<List<MedicationWithPlan>>
+
+    @Transaction
+    @Query("SELECT * FROM medications WHERE isActive = 0 ORDER BY createdAt DESC")
+    fun getPausedMedicationsWithPlans(): Flow<List<MedicationWithPlan>>
+
+    @Transaction
+    @Query("SELECT * FROM medications WHERE name LIKE '%' || :query || '%'")
+    fun searchMedicationsWithPlans(query: String): Flow<List<MedicationWithPlan>>
+
+    @Query("UPDATE medications SET isActive = :status WHERE id = :medId")
+    suspend fun updateMedicationStatus(medId: Long, status: Boolean)
+    @Query("DELETE FROM medications WHERE id = :id")
+    suspend fun deleteMedication(id: Long)
+
+
     @Query("UPDATE dose_logs SET status = :status, actualTime = :actualTime WHERE id = :doseId")
     suspend fun updateDoseStatus(doseId: Long, status: DoseStatus, actualTime: LocalDateTime?)
 
@@ -52,7 +74,7 @@ interface MedicationDao {
         WHERE scheduledTime BETWEEN :startOfDay AND :endOfDay 
         ORDER BY scheduledTime ASC
     """)
-    fun getDosesWithMedicationForToday(
+    fun getDosesWithMedicationForDate(
         startOfDay: LocalDateTime,
         endOfDay: LocalDateTime
     ): Flow<List<DoseWithMedication>>
@@ -110,8 +132,12 @@ interface DoseLogDao {
     suspend fun getLastDoseTime(planId: Long): LocalDateTime?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertAllDoses(doses: List<DoseLogEntity>)
+    suspend fun insertAllDoses(doses: List<DoseLogEntity>): List<Long>
 
     @Query("UPDATE dose_logs SET status = :newStatus, actualTime = :currentTime WHERE id = :doseId")
     suspend fun updateDoseStatus(doseId: Long, newStatus: DoseStatus, currentTime: LocalDateTime = LocalDateTime.now())
+
+    @Query("SELECT * FROM dose_logs WHERE planId = :planId")
+    suspend fun getDosesForPlan(planId: Long): List<DoseLogEntity>
 }
+

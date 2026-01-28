@@ -1,16 +1,17 @@
 package com.albarmajy.medscan.data.repository
 
 import android.util.Log
-import androidx.room.Transaction
 import com.albarmajy.medscan.data.local.dao.DoseLogDao
 import com.albarmajy.medscan.data.local.dao.MedicationDao
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
 import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
+import com.albarmajy.medscan.data.local.relation.MedicationWithPlan
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
 import com.albarmajy.medscan.domain.repository.MedicationRepository
+import com.albarmajy.medscan.scheduler.MedicationAlarmScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
@@ -19,22 +20,51 @@ import java.time.LocalTime
 
 class MedicationRepositoryImpl(
     private val medicationDao: MedicationDao,
-    private val doseDao: DoseLogDao
+    private val doseDao: DoseLogDao,
+    private val alarmScheduler: MedicationAlarmScheduler
 ) : MedicationRepository {
+    override fun getMedicationWithPlanById(id: Long): Flow<MedicationWithPlan?> {
+        return medicationDao.getMedicationWithPlanById(id)
+    }
+
+    override fun getActiveMedicationsWithPlans(): Flow<List<MedicationWithPlan>> = medicationDao.getActiveMedicationsWithPlans()
+
+
+    override fun getPausedMedicationsWithPlans(): Flow<List<MedicationWithPlan>> = medicationDao.getPausedMedicationsWithPlans()
+
+    override fun searchMedicationsWithPlans(query: String): Flow<List<MedicationWithPlan>> = medicationDao.searchMedicationsWithPlans(query)
+
+
+    override suspend fun updateMedicationStatus(medId: Long, status: Boolean) {
+        medicationDao.updateMedicationStatus(medId, status)
+    }
 
     override fun getAllMedications(): Flow<List<MedicationEntity>> =
         medicationDao.getAllActiveMedications()
 
     override suspend fun getMedicationById(id: Long): MedicationEntity? = medicationDao.getMedicationById(id)
+    override suspend fun deleteMedication(id: Long) {
+        medicationDao.deleteMedication(id)
+    }
 
-
-    override fun getDosesWithMedicationForToday(
-        startOfDay: LocalDateTime,
-        endOfDay: LocalDateTime
-    ): Flow<List<DoseWithMedication>> {
+    override fun getDosesWithMedicationForToday(startOfDay: LocalDateTime, endOfDay: LocalDateTime): Flow<List<DoseWithMedication>> {
 
         Log.d("MedicationRepositoryImpl", "getTodayDoses: $startOfDay, $endOfDay")
-        return medicationDao.getDosesWithMedicationForToday(startOfDay, endOfDay).map { list ->
+        return medicationDao.getDosesWithMedicationForDate(startOfDay, endOfDay).map { list ->
+            list.map { dose ->
+                if (dose.dose.scheduledTime.isBefore(LocalDateTime.now().minusMinutes(15)) &&
+                    dose.dose.status == DoseStatus.PENDING) {
+                    updateDoseStatus(dose.dose.id, DoseStatus.MISSED)
+                }
+                dose
+            }
+        }
+    }
+
+    override fun getDosesWithMedicationForDate(date: LocalDate): Flow<List<DoseWithMedication>> {
+        val startOfDay = date.atStartOfDay()
+        val endOfDay = date.atTime(LocalTime.MAX)
+        return medicationDao.getDosesWithMedicationForDate(startOfDay, endOfDay).map { list ->
             list.map { dose ->
                 if (dose.dose.scheduledTime.isBefore(LocalDateTime.now().minusMinutes(15)) &&
                     dose.dose.status == DoseStatus.PENDING) {
@@ -71,11 +101,10 @@ class MedicationRepositoryImpl(
         return results.firstOrNull()
     }
 
-
-
     override suspend fun addNewMedicationWithSchedule(
         plan: MedicationPlanEntity,
-        dosagePerDose: String?
+        dosagePerDose: String?,
+        includePastDoses: Boolean
     ) {
         val planId = medicationDao.insertMedicationPlan(plan)
 
@@ -129,6 +158,7 @@ class MedicationRepositoryImpl(
         startDate: LocalDate,
         endDate: LocalDate
     ) {
+        val medicationName = getMedicationById(plan.medicationId)?.name ?: "Unknown Medication"
         val generatedDoses = mutableListOf<DoseLogEntity>()
         var currentDay = startDate
 
@@ -150,7 +180,12 @@ class MedicationRepositoryImpl(
         }
 
         if (generatedDoses.isNotEmpty()) {
-            doseDao.insertAllDoses(generatedDoses)
+            val newIds = doseDao.insertAllDoses(generatedDoses)
+
+            generatedDoses.forEachIndexed { index, dose ->
+                val assignedId = newIds[index]
+                alarmScheduler.schedule(dose.copy(id = assignedId), medicationName)
+            }
         }
 
 

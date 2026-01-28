@@ -76,9 +76,9 @@ fun MainAppEntryPoint(viewModel: DashboardViewModel = koinViewModel()) {
         }
     }
     else {
-        DashboardScreen(
-            viewModel = viewModel,
-        )
+//        DashboardScreen(
+//            viewModel = viewModel,
+//        )
     }
 
     if (showDialog) {

@@ -11,8 +11,6 @@ data class MedicationEntity(
     val name: String,
     val dosage: String,
     val category: String? = null,
-//    val recurrenceType: RecurrenceType,
-//    val intervalHours: Int,
-//    val startDate: LocalDateTime,
+    val createdAt: Long = System.currentTimeMillis(),
     val isActive: Boolean = true
 )

@@ -15,7 +15,6 @@ import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
 import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.domain.repository.MedicationRepository
-import com.albarmajy.medscan.scheduler.DoseAlarmScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,8 +35,6 @@ class DashboardViewModel(
     application: Application,
     private val repository: MedicationRepository
 ) : AndroidViewModel(application) {
-
-    private val alarmScheduler = DoseAlarmScheduler(application)
 
     val todayDoses: StateFlow<List<DoseWithMedication>> = repository.getDosesWithMedicationForToday(
         startOfDay = LocalDate.now().atStartOfDay(),
@@ -80,7 +77,6 @@ class DashboardViewModel(
     fun saveMedication(medicine: MedicineReferenceEntity?) {
         viewModelScope.launch(Dispatchers.IO) {
             medicine?.let { med ->
-                val now = LocalDateTime.now()
                 val medication = MedicationEntity(
                     id = med.id.toLong(),
                     name = med.trade_name_en,
@@ -99,44 +95,9 @@ class DashboardViewModel(
 
     fun saveMedicationPlan(plan: MedicationPlanEntity, medicineName: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.addNewMedicationWithSchedule(plan, "1 spoonful")
-            val scheduleTimes = generateDoseTimes(plan)
-            scheduleTimes.forEach { dateTime ->
-                val timeInMs = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                if (timeInMs > System.currentTimeMillis()) {
-                    val notificationId = (medicineName + timeInMs).hashCode()
-
-                    alarmScheduler.schedule(
-                        doseId = notificationId,
-                        timeInMillis = timeInMs,
-                        medicineName = medicineName
-                    )
-                }
-            }
+            repository.addNewMedicationWithSchedule(plan, "1 spoonful", false)
 
         }
-    }
-    private fun generateDoseTimes(plan: MedicationPlanEntity): List<LocalDateTime> {
-        val doseTimes = mutableListOf<LocalDateTime>()
-        var currentDay = plan.startDate
-
-        val calculationEndDate = if (plan.isPermanent) {
-            plan.startDate.plusDays(30)
-        } else {
-            plan.endDate ?: plan.startDate.plusDays(30)
-        }
-
-
-        while (!currentDay.isAfter(calculationEndDate)) {
-            plan.timesOfDay.forEach { time ->
-                doseTimes.add(
-                    LocalDateTime.of(currentDay, time)
-                )
-            }
-            currentDay = currentDay.plusDays(1)
-        }
-
-        return doseTimes
     }
 
 
@@ -147,7 +108,6 @@ class DashboardViewModel(
         }
     }
 
-    // scanned text handling
     private val recognitionBuffer = mutableListOf<String>()
     private var lastMatchedId: Int? = null
     fun onTextScanned(rawText: String, onResultFound: (MedicineReferenceEntity) -> Unit) {

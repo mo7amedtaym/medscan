@@ -16,4 +16,6 @@ sealed interface Routes: NavKey {
 
     @Serializable data class MedicationPlan(val medId: Long) : NavKey
 
+    @Serializable data class MedicationDetails(val medId: Long) : NavKey
+
 }

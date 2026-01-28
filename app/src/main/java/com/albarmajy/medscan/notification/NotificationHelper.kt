@@ -2,6 +2,7 @@ package com.albarmajy.medscan.notification
 
 import android.Manifest
 import android.R
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -10,19 +11,20 @@ import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
-// notification/NotificationHelper.kt
 object NotificationHelper {
     private const val CHANNEL_ID = "medication_channel"
 
     fun createNotificationChannel(context: Context) {
+        val manager = context.getSystemService(NotificationManager::class.java)
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "تنبيهات الأدوية",
-            NotificationManager.IMPORTANCE_HIGH
+            "Reminders",
+            NotificationManager.IMPORTANCE_HIGH // تأكد أنها HIGH
         ).apply {
-            description = "تستخدم لتذكيرك بموعد تناول الدواء"
+            description = "Medication Reminders"
+            enableVibration(true) // الاهتزاز يساعد في إيقاظ العمليات
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
-        val manager = context.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(channel)
     }
 

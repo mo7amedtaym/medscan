@@ -19,6 +19,7 @@ room = "2.6.1"
 navigation3 = "1.0.0"
 workRuntimeKtx = "2.11.0"
 foundation = "1.10.1"
+uiGraphics = "1.10.1"
 #roomVersion = "2.8.4"
 
 
@@ -53,6 +54,7 @@ play-services-mlkit-text-recognition = { group = "com.google.android.gms", name 
 protolite-well-known-types = { group = "com.google.firebase", name = "protolite-well-known-types", version.ref = "protoliteWellKnownTypes" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

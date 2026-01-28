@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.protolite.well.known.types)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.ui.graphics)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

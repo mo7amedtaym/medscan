@@ -3,6 +3,7 @@ package com.albarmajy.medscan.domain.repository
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
 import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
+import com.albarmajy.medscan.data.local.relation.MedicationWithPlan
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
 import com.albarmajy.medscan.domain.model.DoseStatus
@@ -12,10 +13,18 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 interface MedicationRepository {
+
+    fun getMedicationWithPlanById(id: Long): Flow<MedicationWithPlan?>
+    fun getActiveMedicationsWithPlans(): Flow<List<MedicationWithPlan>>
+    fun getPausedMedicationsWithPlans(): Flow<List<MedicationWithPlan>>
+    fun searchMedicationsWithPlans(query: String): Flow<List<MedicationWithPlan>>
+    suspend fun updateMedicationStatus(medId: Long, status: Boolean)
     fun getAllMedications(): Flow<List<MedicationEntity>>
     suspend fun getMedicationById(id: Long): MedicationEntity?
+    suspend fun deleteMedication(id: Long)
 
     fun getDosesWithMedicationForToday(startOfDay: LocalDateTime, endOfDay: LocalDateTime): Flow<List<DoseWithMedication>>
+    fun getDosesWithMedicationForDate(date: LocalDate): Flow<List<DoseWithMedication>>
     fun getDoses(): Flow<List<DoseLogEntity>>
 
     suspend fun addNewMedication(medication: MedicationEntity)
@@ -26,7 +35,8 @@ interface MedicationRepository {
 
     suspend fun addNewMedicationWithSchedule(
         plan: MedicationPlanEntity,
-        dosagePerDose: String?
+        dosagePerDose: String?,
+        includePastDoses: Boolean,
     )
 
 

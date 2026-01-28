@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -152,13 +153,19 @@ fun MedicationItem(
 
                             val timeAgoText = when {
                                 minutes < 60 -> "$minutes minutes ago"
-                                else -> "$hours hours ago"
+                                hours < 12 -> "$hours hours ago"
+                                else -> "Missed - at ${doseTime.format(formatter)}"
+
                             }
                            return@remember timeAgoText
 
                         }
                         isDoseWindow -> "Time to take it (Now)"
-                        isTooEarly -> "Starts in ${minutesDifference / 60}h ${minutesDifference % 60}m"
+                        isTooEarly ->if (minutesDifference > 120){
+                           "at ${doseTime.format(formatter)}"
+                        }else{
+                            "Starts in ${minutesDifference / 60}h ${minutesDifference % 60}m"
+                        }
                         else -> "${doseTime.format(DateTimeFormatter.ofPattern("hh:mm a"))} • Scheduled"
                     }
                 }
@@ -259,7 +266,6 @@ fun ModernCheckbox(onChecked: () -> Unit) {
         border = BorderStroke(2.dp, PrimaryBlue),
         modifier = Modifier.size(28.dp)
     ) {
-        // يبقى فارغاً حتى يتم الضغط عليه
     }
 }
 
@@ -319,7 +325,7 @@ fun ActionMenu(status: DoseStatus,onTaken: () -> Unit, onSkipped: () -> Unit, on
                         elevation = CardDefaults.cardElevation(12.dp),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier
-                            .padding(end = 16.dp, top = 8.dp) // إزاحة القائمة لتظهر تحت النقاط
+                            .padding(end = 16.dp, top = 8.dp)
                             .width(180.dp)
                             .border(1.dp, Color.LightGray.copy(0.3f), RoundedCornerShape(16.dp))
                     ) {
@@ -403,3 +409,4 @@ fun ActionMenuItem(text: String, icon: ImageVector, color: Color, onClick: () ->
         }
     }
 }
+

@@ -465,7 +465,7 @@ fun DurationPicker(
             }
 
             DurationCard(
-                modifier = Modifier.weight(permanentWeight), // استخدام الوزن المتحرك
+                modifier = Modifier.weight(permanentWeight),
                 title = "Permanent",
                 subtitle = "Until stopped",
                 icon = Icons.Default.AllInclusive,

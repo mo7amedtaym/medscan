@@ -24,16 +24,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberNavBackStack
-
 import androidx.navigation3.ui.NavDisplay
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
-import com.albarmajy.medscan.ui.screens.CalendarScreen
 import com.albarmajy.medscan.ui.screens.CameraScannerScreen
 import com.albarmajy.medscan.ui.screens.DashboardScreen
+import com.albarmajy.medscan.ui.screens.MedicationCalendarScreen
+import com.albarmajy.medscan.ui.screens.MedicationDetailsScreen
 import com.albarmajy.medscan.ui.screens.MedicationPlanScreen
 import com.albarmajy.medscan.ui.screens.MedicinesScreen
 import com.albarmajy.medscan.ui.screens.SettingsScreen
@@ -42,74 +42,11 @@ import com.albarmajy.medscan.ui.theme.PrimaryBlue
 import com.albarmajy.medscan.ui.viewModels.DashboardViewModel
 import org.koin.androidx.compose.koinViewModel
 
-
-//@RequiresApi(Build.VERSION_CODES.S)
-//@Composable
-//fun NavigationRoot(modifier: Modifier = Modifier, viewModel: DashboardViewModel = koinViewModel()) {
-//    val backStack = rememberNavBackStack(Routes.Dashboard)
-//
-//    NavDisplay(
-//        backStack = backStack,
-//        entryProvider = { key->
-//            when(key){
-//                is Routes.Dashboard -> {
-//                    NavEntry(key) {
-//                        DashboardScreen(
-//                            onScanClick = { backStack.add(Routes.Scanner) }
-//                        )
-//                    }
-//                }
-//                is Routes.Scanner -> {
-//                    NavEntry(key) {
-//                        CameraScannerScreen(
-//                            onTextScanned = { result ->
-//                                viewModel.onTextScanned(result) { matchedMedicine ->
-//                                    if (backStack.isNotEmpty()) {
-//                                        backStack.removeAt(backStack.size - 1)
-//                                    }
-//                                    backStack.add(Routes.MedicationPlan(matchedMedicine.id.toLong()))
-//
-//                                }
-//                            }
-//                        )
-//                    }
-//                }
-//                is Routes.Calendar -> {
-//                    NavEntry(key) {
-//                        CalendarScreen()
-//                    }
-//                }
-//                is Routes.Medicines -> {
-//                    NavEntry(key) {
-//                        MedicinesScreen()
-//                    }
-//                }
-//                is Routes.Settings -> {
-//                    NavEntry(key) {
-//                        SettingsScreen()
-//                    }
-//                }
-//                is Routes.MedicationPlan -> {
-//                    NavEntry(key) {
-//                        MedicationPlanScreen(key.medId, onBack = { backStack.removeAt(backStack.size - 1)}){
-//                            backStack.add(Routes.Dashboard)
-//                        }
-//                    }
-//                }
-//                else -> error("Unknown route")
-//            }
-//        },
-//        modifier = modifier,
-//    )
-//
-//}
-
-
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
     val backStack = rememberNavBackStack(Routes.Dashboard)
-    val currentRoute = backStack.lastOrNull()
+    var currentRoute = backStack.lastOrNull()
     val mainRoutes = listOf(Routes.Dashboard, Routes.Calendar, Routes.Medicines, Routes.Settings)
     val shouldShowBottomBar = currentRoute in mainRoutes
 
@@ -148,9 +85,17 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
             backStack = backStack,
             entryProvider = { key ->
                 when (key) {
-                    is Routes.Dashboard -> NavEntry(key) { DashboardScreen() }
-                    is Routes.Calendar -> NavEntry(key) { CalendarScreen() }
-                    is Routes.Medicines -> NavEntry(key) { MedicinesScreen() }
+                    is Routes.Dashboard -> NavEntry(key) { DashboardScreen( onCalenderClicked = {
+                        backStack.removeAt(backStack.size - 1)
+                        backStack.add(Routes.Calendar)
+                    }) }
+                    is Routes.Calendar -> NavEntry(key) { MedicationCalendarScreen() }
+                    is Routes.Medicines -> NavEntry(key) { MedicinesScreen(
+                        onMedicationClick = { med ->
+                            backStack.add(Routes.MedicationDetails(med.medication.id))
+                        }
+
+                    ) }
                     is Routes.Settings -> NavEntry(key) { SettingsScreen() }
 
                     is Routes.Scanner -> NavEntry(key) {
@@ -173,6 +118,14 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
                                 backStack.add(Routes.Dashboard)
                             }
                         )
+                    }
+
+                    is Routes.MedicationDetails -> NavEntry(key) {
+                        MedicationDetailsScreen(key.medId, onBack = {
+                            backStack.removeAt(backStack.lastIndex)
+                        }, onDelete = {}, onEdit = {
+                            backStack.add(Routes.MedicationPlan(key.medId))
+                        })
                     }
                     else -> error("unknown NavKey: $key")
                 }
