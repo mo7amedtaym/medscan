@@ -25,4 +25,9 @@ class MedicationDetailsViewModel(
             repository.updateMedicationStatus(planId, !currentStatus)
         }
     }
+    fun deleteMedication() {
+        viewModelScope.launch {
+            repository.deleteMedication(medId)
+        }
+    }
 }

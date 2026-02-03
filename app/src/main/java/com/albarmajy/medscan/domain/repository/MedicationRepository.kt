@@ -51,4 +51,9 @@ interface MedicationRepository {
         startDate: LocalDate,
         endDate: LocalDate
     )
+
+    suspend fun deletePlan(plan: MedicationPlanEntity)
+    suspend fun updatePlanEndDate(planId: Long, newEndDate: LocalDate)
+    suspend fun deleteFutureDoses(medicationId: Long, currentTime: LocalDateTime)
+
 }

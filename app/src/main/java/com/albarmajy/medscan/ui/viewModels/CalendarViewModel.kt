@@ -6,7 +6,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
+import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.domain.repository.MedicationRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -14,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 class CalendarViewModel(private val repository: MedicationRepository) : ViewModel() {
@@ -38,5 +41,11 @@ class CalendarViewModel(private val repository: MedicationRepository) : ViewMode
 
     fun onDateSelected(date: LocalDate) {
         _selectedDate.value = date
+    }
+
+    fun updateDoseState(doseId: Long, status: DoseStatus) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.updateDoseStatus(doseId, status)
+        }
     }
 }

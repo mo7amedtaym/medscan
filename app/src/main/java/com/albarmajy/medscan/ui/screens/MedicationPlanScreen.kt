@@ -1,83 +1,38 @@
 package com.albarmajy.medscan.ui.screens
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AllInclusive
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.EventRepeat
-import androidx.compose.material.icons.filled.MedicalServices
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asComposeRenderEffect
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.albarmajy.medscan.data.local.entities.MedicationEntity
 import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
+import com.albarmajy.medscan.data.local.relation.MedicationWithPlan
 import com.albarmajy.medscan.domain.model.DoseUiState
 import com.albarmajy.medscan.ui.customUi.DoseTimeItem
 import com.albarmajy.medscan.ui.theme.BackgroundLight
 import com.albarmajy.medscan.ui.theme.PrimaryBlue
 import com.albarmajy.medscan.ui.theme.TextSub
 import com.albarmajy.medscan.ui.viewModels.DashboardViewModel
-import com.albarmajy.medscan.ui.viewModels.PlanViewModel
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 
@@ -88,124 +43,131 @@ fun MedicationPlanScreen(
     onBack: () -> Unit,
     onConfirm: (MedicationPlanEntity, String) -> Unit,
 ) {
-    Log.d("PlanScreen", "medId: $medId")
-    val medication by viewModel.currentMedication.collectAsState()
+    val medicationWithPlan by viewModel.currentMedication.collectAsState()
 
     LaunchedEffect(medId) {
-        val medication1 =viewModel.getMedicationById(medId)
-        Log.d("PlanScreen", "medId in LaunchedEffect: $medication1")
-
+        viewModel.getMedicationById(medId)
     }
-    var doseFrequency by remember { mutableIntStateOf(2) }
-    var selectedDuration by remember { mutableStateOf("Fixed") } // Fixed or Permanent
+    MedicationPlanContent(
+        medicationWithPlan = medicationWithPlan,
+        onBack = onBack,
+        onConfirm = {
+            plan, name -> onConfirm(plan, name)
+            viewModel.updateMedicationPlan(medicationWithPlan?.plan, plan)
+        }
+    )
+}
+
+
+@Composable
+fun MedicationPlanContent(
+    medicationWithPlan: MedicationWithPlan?,
+    onBack: () -> Unit,
+    onConfirm: (MedicationPlanEntity, String) -> Unit,
+) {
+    val medication = medicationWithPlan?.medication
+    val plan = medicationWithPlan?.plan
+    var doseFrequency by remember { mutableIntStateOf(plan?.timesOfDay?.size ?: 3) }
+    var selectedDuration by remember { mutableStateOf(if (plan?.isPermanent == true) "Permanent" else "Fixed") }
     var daysCount by remember { mutableIntStateOf(7) }
 
     var dosesList by remember {
-        mutableStateOf(List(2) { DoseUiState(id = it, hour = 8) })
+        mutableStateOf(listOf(DoseUiState(id = 0, hour = 7, amPm = "AM"), DoseUiState(id = 1, hour = 15), DoseUiState(id = 2, hour = 23)))
     }
+    Log.d("selectedDuration", selectedDuration)
 
-    when(doseFrequency){
-        1 -> {
-            dosesList = listOf(DoseUiState(id = 0, hour = 8))
-        }
-        2 ->{
-            dosesList = listOf(DoseUiState(id = 0, hour = 8), DoseUiState(id = 1, hour = 20))
-        }
-        3 ->{
-            dosesList = listOf(DoseUiState(id = 0, hour = 7), DoseUiState(id = 1, hour = 15), DoseUiState(id = 2, hour = 23))
-        }
-        4 ->{
-            dosesList = listOf(DoseUiState(id = 0, hour = 6), DoseUiState(id = 1, hour = 12), DoseUiState(id = 2, hour = 18), DoseUiState(id = 3, hour = 23, minute = 59))
-        }
-    }
+
 
     LaunchedEffect(doseFrequency) {
-        dosesList = (0 until doseFrequency).map { index ->
-            dosesList.getOrNull(index) ?: DoseUiState(id = index, 8)
+        dosesList = when (doseFrequency) {
+            1 -> listOf(DoseUiState(id = 0, hour = 8, amPm = "AM"))
+            2 -> listOf(DoseUiState(id = 0, hour = 8, amPm = "AM"), DoseUiState(id = 1, hour = 20))
+            3 -> listOf(DoseUiState(id = 0, hour = 7, amPm = "AM"), DoseUiState(id = 1, hour = 15), DoseUiState(id = 2, hour = 23))
+            4 -> listOf(DoseUiState(id = 0, hour = 6, amPm = "AM"), DoseUiState(id = 1, hour = 12), DoseUiState(id = 2, hour = 18), DoseUiState(id = 3, hour = 23, minute = 59))
+            else -> dosesList
         }
     }
+
+
+    val isDataChanged = remember(doseFrequency, selectedDuration, daysCount, dosesList) {
+        plan?.let { old ->
+            val newTimes = dosesList.map { it.toLocalTime() }
+            val newEndDate = if (selectedDuration == "Fixed") LocalDate.now().plusDays(daysCount.toLong()) else null
+            val newIsPermanent = selectedDuration == "Permanent"
+
+            old.timesOfDay != newTimes ||
+                    old.endDate != newEndDate ||
+                    old.isPermanent != newIsPermanent
+        } ?: true
+    }
+
     Scaffold(
         containerColor = BackgroundLight,
         topBar = {
-            PlanTopBar(onBack = onBack){
-                if(medication != null){
+            PlanTopBar(text=if (plan != null) "Update" else "Create" ,onBack = onBack) {
+                if (!isDataChanged) {
+                    onBack()
+                    return@PlanTopBar
+                }
+                medication?.let {
                     onConfirm(
                         MedicationPlanEntity(
-                            medicationId = medId,
+                            medicationId = it.id,
                             startDate = LocalDate.now(),
                             endDate = if (selectedDuration == "Fixed") LocalDate.now().plusDays(daysCount.toLong()) else null,
-                            timesOfDay = dosesList.take(doseFrequency).map { it.toLocalTime() },
+                            timesOfDay = dosesList.map { dose -> dose.toLocalTime() },
                             isPermanent = selectedDuration == "Permanent"
                         ),
-                        medication!!.name
+                        it.name
                     )
                 }
             }
         },
-
     ) { padding ->
-        Log.d("PlanScreen", "Medication: $medication")
         if (medication == null) {
-
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = PrimaryBlue)
             }
-        }
-
-        else{
+        } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 16.dp)
-
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item { MedicineHeaderCard(medication!!.name, medication!!.dosage) }
+                item { MedicineHeaderCard(medication.name, medication.dosage) }
+
                 item {
-                    Text(
-                        "Daily Dose Frequency",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                    FrequencySelector(
-                        selectedFrequency = doseFrequency,
-                        onFrequencySelected = { doseFrequency = it }
-                    )
+                    Text("Daily Dose Frequency", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp))
+                    FrequencySelector(selectedFrequency = doseFrequency, onFrequencySelected = { doseFrequency = it })
                 }
 
                 item {
-                    Text(
-                        "Set Dose Times",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)
-                    )
+                    Text("Set Dose Times", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 24.dp, bottom = 16.dp))
                 }
 
                 items(
-                    count = dosesList.size,
-                    key = { index -> "dose_${dosesList[index].id}" }
-                ) { index ->
+                    items = dosesList,
+                    key = { it.id }
+                ) { dose ->
+                    val displayIndex = dosesList.indexOfFirst { it.id == dose.id } + 1
                     DoseTimeItem(
-                        index = index + 1,
-                        doseState = dosesList[index],
-                    ){ updatedDose ->
-
-                        val newList = dosesList.toMutableList()
-                        newList[index] = updatedDose
-                        dosesList = newList
-                    }
+                        index = displayIndex,
+                        doseState = dose,
+                        onUpdateDose = { updatedDose ->
+                            val targetIndex = dosesList.indexOfFirst { it.id == updatedDose.id }
+                            if (targetIndex != -1) {
+                                val newList = dosesList.toMutableList()
+                                newList[targetIndex] = updatedDose
+                                dosesList = newList
+                            }
+                        }
+                    )
                 }
 
-
                 item {
-                    DurationPicker(
-                        selectedDuration = selectedDuration,
-                        daysCount = daysCount,
-                        onDurationChange = { selectedDuration = it },
-                        onDaysChange = { daysCount = it }
-                    )
+                    DurationPicker(selectedDuration = selectedDuration, daysCount = daysCount, onDurationChange = { selectedDuration = it }, onDaysChange = { daysCount = it })
                 }
 
                 item { Spacer(modifier = Modifier.height(100.dp)) }
@@ -224,21 +186,9 @@ fun MedicineHeaderCard(title: String, subtitle: String) {
             .padding(vertical = 16.dp),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                color = PrimaryBlue,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.size(56.dp)
-            ) {
-                Icon(
-                    Icons.Default.MedicalServices,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.padding(12.dp)
-                )
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(color = PrimaryBlue, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(56.dp)) {
+                Icon(Icons.Default.MedicalServices, contentDescription = null, tint = Color.White, modifier = Modifier.padding(12.dp))
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
@@ -250,80 +200,12 @@ fun MedicineHeaderCard(title: String, subtitle: String) {
 }
 
 @Composable
-fun DoseTimeItem1(index: Int, label: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(PrimaryBlue.copy(alpha = 0.1f))
-                .border(2.dp, BackgroundLight, CircleShape)
-        ) {
-            Text("$index", color = PrimaryBlue, fontWeight = FontWeight.Bold)
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Card(
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.weight(1f),
-            elevation = CardDefaults.cardElevation(1.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Button(
-                        onClick = { /* Open TimePicker */ },
-                        colors = ButtonDefaults.buttonColors(containerColor = BackgroundLight),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Icon(Icons.Default.Schedule, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("08:00 AM", color = Color.Black, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
-                    Text("DOSE", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Button(
-                        onClick = { /* Open TimePicker */ },
-                        colors = ButtonDefaults.buttonColors(containerColor = BackgroundLight),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("1 Pill", color = Color.Black, fontWeight = FontWeight.Bold)
-                    }
-
-                }
-            }
-        }
-    }
-}
-
-
-
-
-@Composable
 fun FrequencySelector(selectedFrequency: Int, onFrequencySelected: (Int) -> Unit) {
     val options = listOf(1, 2, 3, 4)
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        maxItemsInEachRow = Int.MAX_VALUE
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         options.forEach { count ->
             val isSelected = selectedFrequency == count
@@ -334,98 +216,42 @@ fun FrequencySelector(selectedFrequency: Int, onFrequencySelected: (Int) -> Unit
                 modifier = Modifier.height(44.dp),
                 shadowElevation = 2.dp
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        if (count == 1) "$count time" else "$count times",
-                        color = if (isSelected) Color.White else Color.Black,
-                        fontSize = 14.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                    )
+                Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (count == 1) "$count time" else "$count times", color = if (isSelected) Color.White else Color.Black, fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium)
                     if (isSelected) {
                         Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            Icons.Default.CheckCircle,
-                            null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
+                        Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(16.dp))
                     }
                 }
             }
         }
     }
-
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlanTopBar(onBack: () -> Unit, onConfirm: () -> Unit) {
+fun PlanTopBar(text: String, onBack: () -> Unit, onConfirm: () -> Unit) {
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         title = {
             Column {
-                Text(
-                    "Medication Plan".uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextSub,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "Schedule Setup",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Medication Plan".uppercase(), style = MaterialTheme.typography.labelSmall, color = TextSub, fontWeight = FontWeight.Bold)
+                Text("Schedule Setup", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
         },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-            }
-        },
-        actions = {
-            TextButton(onClick = onConfirm) {
-                Text("Confirm", color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
-            }
-        },
-
+        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } },
+        actions = { TextButton(onClick = onConfirm) { Text(text, color = PrimaryBlue, fontWeight = FontWeight.SemiBold) } },
     )
 }
 
-
 @Composable
-fun DurationPicker(
-    selectedDuration: String,
-    daysCount: Int,
-    onDurationChange: (String) -> Unit,
-    onDaysChange: (Int) -> Unit
-) {
-    val fixedWeight by animateFloatAsState(
-        targetValue = if (selectedDuration == "Fixed") 3f else 2f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "FixedCardWeight"
-    )
-
-    val permanentWeight by animateFloatAsState(
-        targetValue = if (selectedDuration == "Permanent") 3f else 2f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "PermanentCardWeight"
-    )
+fun DurationPicker(selectedDuration: String, daysCount: Int, onDurationChange: (String) -> Unit, onDaysChange: (Int) -> Unit) {
+    val fixedWeight by animateFloatAsState(targetValue = if (selectedDuration == "Fixed") 1.2f else 1f, label = "")
+    val permanentWeight by animateFloatAsState(targetValue = if (selectedDuration == "Permanent") 1.2f else 1f, label = "")
 
     Column(modifier = Modifier.padding(top = 24.dp)) {
-        Text(
-            "Treatment Duration",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Text("Treatment Duration", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             DurationCard(
                 modifier = Modifier.weight(fixedWeight),
                 title = "Fixed Days",
@@ -435,31 +261,10 @@ fun DurationPicker(
                 onClick = { onDurationChange("Fixed") }
             ) {
                 AnimatedVisibility(visible = selectedDuration == "Fixed") {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceAround,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            IconButton(
-                                onClick = { if (daysCount > 1) onDaysChange(daysCount - 1) },
-//                                modifier = Modifier
-//                                    .size(24.dp)
-//                                    .background(PrimaryBlue, CircleShape)
-                            ) {
-                                Icon(Icons.Default.Remove, null, tint = Color.Black, modifier = Modifier.size(26.dp))
-                            }
-                            Text("$daysCount", modifier = Modifier.padding(horizontal = 8.dp), fontWeight = FontWeight.Bold, fontSize = 24.sp)
-                            IconButton(
-                                onClick = { onDaysChange(daysCount + 1) },
-//                                modifier = Modifier
-//                                    .size(26.dp)
-//                                    .background(PrimaryBlue, CircleShape)
-                            ) {
-                                Icon(Icons.Default.Add, null, tint = Color.Black, modifier = Modifier.size(18.dp))
-                            }
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()) {
+                        IconButton(onClick = { if (daysCount > 1) onDaysChange(daysCount - 1) }) { Icon(Icons.Default.Remove, null, tint = Color.Black) }
+                        Text("$daysCount", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        IconButton(onClick = { onDaysChange(daysCount + 1) }) { Icon(Icons.Default.Add, null, tint = Color.Black) }
                     }
                 }
             }
@@ -476,29 +281,18 @@ fun DurationPicker(
     }
 }
 
-
 @Composable
-fun DurationCard(
-    modifier: Modifier,
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    content: @Composable (() -> Unit)? = null
-) {
+fun DurationCard(modifier: Modifier, title: String, subtitle: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit, content: @Composable (() -> Unit)? = null) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(120.dp).animateContentSize().padding(4.dp),
+        modifier = modifier
+            .height(130.dp)
+            .animateContentSize(),
         shape = RoundedCornerShape(16.dp),
         color = if (isSelected) PrimaryBlue.copy(alpha = 0.05f) else Color.White,
         border = BorderStroke(2.dp, if (isSelected) PrimaryBlue else Color.Transparent),
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+        Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Icon(icon, null, tint = if (isSelected) PrimaryBlue else Color.Gray)
             Text(title, fontWeight = FontWeight.Bold, color = if (isSelected) PrimaryBlue else Color.Black)
             if (content != null) content()
@@ -507,12 +301,15 @@ fun DurationCard(
     }
 }
 
-@Preview
+// 3. الـ Preview ببيانات وهمية
+@Preview(showBackground = true)
 @Composable
 private fun MedicationPlanScreenPreview() {
-    MedicationPlanScreen(
-        medId = 1,
-        onConfirm = {} as (MedicationPlanEntity, String) -> Unit,
-        onBack = {}
-    )
+    MaterialTheme {
+        MedicationPlanContent(
+            medicationWithPlan =MedicationWithPlan( MedicationEntity(id = 1, name = "Amoxicillin", dosage = "500mg", isActive = true),null),
+            onConfirm = { _, _ -> },
+            onBack = {}
+        )
+    }
 }

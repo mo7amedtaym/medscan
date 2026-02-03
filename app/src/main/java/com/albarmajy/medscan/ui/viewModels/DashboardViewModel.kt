@@ -13,6 +13,7 @@ import com.albarmajy.medscan.data.local.entities.MedicationEntity
 import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
+import com.albarmajy.medscan.data.local.relation.MedicationWithPlan
 import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.domain.repository.MedicationRepository
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +40,9 @@ class DashboardViewModel(
     val todayDoses: StateFlow<List<DoseWithMedication>> = repository.getDosesWithMedicationForToday(
         startOfDay = LocalDate.now().atStartOfDay(),
         endOfDay = LocalDate.now().plusDays(1).atStartOfDay()
-    ).stateIn(
+    ).map { doses ->
+        doses.filter { it.medication.isActive }
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -61,15 +64,16 @@ class DashboardViewModel(
     val totalCount: Flow<Int> = todayDoses.map { list -> list.size }
 
 
-    private val _currentMedication = MutableStateFlow<MedicationEntity?>(null)
-    val currentMedication: StateFlow<MedicationEntity?> = _currentMedication.asStateFlow()
+    private val _currentMedication = MutableStateFlow<MedicationWithPlan?>(null)
+    val currentMedication: StateFlow<MedicationWithPlan?> = _currentMedication.asStateFlow()
 
     fun getMedicationById(id: Long) {
         viewModelScope.launch {
             val medication = withContext(Dispatchers.IO) {
-                repository.getMedicationById(id)
+                repository.getMedicationWithPlanById(id)
             }
-            _currentMedication.value = medication
+            _currentMedication.value = medication.stateIn(viewModelScope).value
+
         }
     }
 
@@ -81,6 +85,7 @@ class DashboardViewModel(
                     id = med.id.toLong(),
                     name = med.trade_name_en,
                     dosage = med.strength,
+                    isActive = false,
 
                 )
 
@@ -93,9 +98,10 @@ class DashboardViewModel(
         }
     }
 
-    fun saveMedicationPlan(plan: MedicationPlanEntity, medicineName: String) {
+    fun saveMedicationPlan(plan: MedicationPlanEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.addNewMedicationWithSchedule(plan, "1 spoonful", false)
+            repository.updateMedicationStatus(plan.medicationId, true)
 
         }
     }
@@ -135,6 +141,20 @@ class DashboardViewModel(
                     recognitionBuffer.clear()
                 }
             }
+        }
+    }
+
+    fun updateMedicationPlan(oldPlan: MedicationPlanEntity?, newPlan: MedicationPlanEntity) {
+        viewModelScope.launch {
+            if (oldPlan != null) {
+                if (oldPlan.startDate == LocalDate.now()) {
+                    repository.deletePlan(oldPlan)
+                } else {
+                    repository.updatePlanEndDate(oldPlan.id, LocalDate.now())
+                    repository.deleteFutureDoses(oldPlan.medicationId, LocalDateTime.now())
+                }
+            }
+            saveMedicationPlan(newPlan)
         }
     }
 

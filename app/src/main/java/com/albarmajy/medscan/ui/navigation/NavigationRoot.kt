@@ -27,6 +27,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
@@ -39,6 +40,7 @@ import com.albarmajy.medscan.ui.screens.MedicinesScreen
 import com.albarmajy.medscan.ui.screens.SettingsScreen
 import com.albarmajy.medscan.ui.theme.BackgroundLight
 import com.albarmajy.medscan.ui.theme.PrimaryBlue
+import com.albarmajy.medscan.ui.theme.TextSub
 import com.albarmajy.medscan.ui.viewModels.DashboardViewModel
 import org.koin.androidx.compose.koinViewModel
 
@@ -112,20 +114,27 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
                         MedicationPlanScreen(
                             medId = key.medId,
                             onBack = { backStack.removeAt(backStack.lastIndex) },
-                            onConfirm = { it, name ->
-                                viewModel.saveMedicationPlan(it, name)
-                                backStack.clear()
-                                backStack.add(Routes.Dashboard)
+                            onConfirm = { it,_ ->
+//                                viewModel.saveMedicationPlan(it)
+                                backStack.removeAt(backStack.lastIndex)
                             }
                         )
                     }
 
                     is Routes.MedicationDetails -> NavEntry(key) {
-                        MedicationDetailsScreen(key.medId, onBack = {
-                            backStack.removeAt(backStack.lastIndex)
-                        }, onDelete = {}, onEdit = {
-                            backStack.add(Routes.MedicationPlan(key.medId))
-                        })
+                        MedicationDetailsScreen(key.medId,
+                            onBack = {
+                                backStack.removeAt(backStack.lastIndex)
+                            },
+                            onDelete = {
+                                backStack.removeAt(backStack.lastIndex)
+                            },
+                            onEdit = {
+                                backStack.add(Routes.MedicationPlan(key.medId))
+                            },
+                            onNavigateToCreatePlan = { medId ->
+                                backStack.add(Routes.MedicationPlan(medId))
+                            })
                     }
                     else -> error("unknown NavKey: $key")
                 }
@@ -137,18 +146,32 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
 
 @Composable
 fun BottomNavigationBar(currentRoute: NavKey, onNavigate: (NavKey) -> Unit) {
-    NavigationBar(containerColor = Color.White, contentColor = PrimaryBlue) {
+    NavigationBar(containerColor = Color.White, contentColor = PrimaryBlue, tonalElevation = 4.dp) {
         NavigationBarItem(
             selected = currentRoute is Routes.Dashboard,
             onClick = { onNavigate(Routes.Dashboard) },
             icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text("Home") }
+            label = { Text("Home") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = PrimaryBlue,
+                selectedTextColor = PrimaryBlue,
+                indicatorColor = PrimaryBlue.copy(0.3f),
+                unselectedIconColor = TextSub,
+                unselectedTextColor = Color.Gray,
+            )
         )
         NavigationBarItem(
             selected = currentRoute is Routes.Calendar,
             onClick = { onNavigate(Routes.Calendar) },
             icon = { Icon(Icons.Default.DateRange, contentDescription = null) },
-            label = { Text("Calendar") }
+            label = { Text("Calendar") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = PrimaryBlue,
+                selectedTextColor = PrimaryBlue,
+                indicatorColor = PrimaryBlue.copy(0.3f),
+                unselectedIconColor =TextSub,
+                unselectedTextColor = Color.Gray,
+            )
         )
 
         Spacer(Modifier.weight(1f))
@@ -157,13 +180,27 @@ fun BottomNavigationBar(currentRoute: NavKey, onNavigate: (NavKey) -> Unit) {
             selected = currentRoute is Routes.Medicines,
             onClick = { onNavigate(Routes.Medicines) },
             icon = { Icon(Icons.Default.Medication, contentDescription = null) },
-            label = { Text("Meds") }
+            label = { Text("Meds") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = PrimaryBlue,
+                selectedTextColor = PrimaryBlue,
+                indicatorColor = PrimaryBlue.copy(0.3f),
+                unselectedIconColor = TextSub,
+                unselectedTextColor = Color.Gray,
+            )
         )
         NavigationBarItem(
             selected = currentRoute is Routes.Settings,
             onClick = { onNavigate(Routes.Settings) },
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-            label = { Text("Settings") }
+            label = { Text("Settings") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = PrimaryBlue,
+                selectedTextColor = PrimaryBlue,
+                indicatorColor = PrimaryBlue.copy(0.3f),
+                unselectedIconColor = TextSub,
+                unselectedTextColor = Color.Gray,
+            )
         )
     }
 }

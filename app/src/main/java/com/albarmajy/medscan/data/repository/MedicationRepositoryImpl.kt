@@ -191,6 +191,22 @@ class MedicationRepositoryImpl(
 
     }
 
+    override suspend fun deletePlan(plan: MedicationPlanEntity) {
+        medicationDao.deletePlan(plan.id)
+    }
+
+    override suspend fun updatePlanEndDate(planId: Long, newEndDate: LocalDate) {
+        medicationDao.updatePlanEndDate(planId, newEndDate)
+    }
+
+    override suspend fun deleteFutureDoses(
+        medicationId: Long,
+        currentTime: LocalDateTime
+    ) {
+        medicationDao.deleteFutureDoses(medicationId, currentTime)
+    }
+
+
 }
 
 

@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.ui.customUi.MedicationItem
 import com.albarmajy.medscan.ui.theme.PrimaryBlue
 import com.albarmajy.medscan.ui.viewModels.CalendarViewModel
@@ -115,14 +116,24 @@ fun MedicationCalendarScreen(
 
             CalendarDateStrip(viewModel, listState)
 
-            Spacer(Modifier.height(24.dp))
+//            Spacer(Modifier.height(24.dp))
 
             LazyColumn( modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp, 26.dp, 16.dp, 16.dp))
             {
                 items(doses, key = { it.dose.id }) { dose ->
-                    MedicationItem(dose, {},{},{})
+                    MedicationItem(dose, {viewModel.updateDoseState(dose.dose.id, DoseStatus.TAKEN)},
+                        {
+                            if (dose.dose.status == DoseStatus.SKIPPED){
+                                viewModel.updateDoseState(dose.dose.id, DoseStatus.PENDING)
+                            }
+                            else{
+                                viewModel.updateDoseState(dose.dose.id, DoseStatus.SKIPPED)
+                            }
+                        },
+                        {}
+                    )
                 }
             }
 

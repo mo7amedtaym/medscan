@@ -14,6 +14,7 @@ import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
 import com.albarmajy.medscan.domain.model.DoseStatus
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Dao
@@ -61,6 +62,18 @@ interface MedicationDao {
 
     @Insert
     suspend fun insertMedicationPlan(plan: MedicationPlanEntity): Long
+
+    //plan query
+    @Query("DELETE FROM medication_plans WHERE id = :planId")
+    suspend fun deletePlan(planId: Long)
+
+    @Query("UPDATE medication_plans SET endDate = :endDate, isPermanent = 0 WHERE id = :planId")
+    suspend fun updatePlanEndDate(planId: Long, endDate: LocalDate)
+
+    @Query("DELETE FROM dose_logs WHERE medicationId = :medId AND scheduledTime > :now")
+    suspend fun deleteFutureDoses(medId: Long, now: LocalDateTime)
+
+
 
     @Insert
     suspend fun insertAllDoses(doses: List<DoseLogEntity>)

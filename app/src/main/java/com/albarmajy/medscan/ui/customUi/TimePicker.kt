@@ -58,10 +58,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -71,6 +69,7 @@ import com.albarmajy.medscan.domain.model.DoseUiState
 import com.albarmajy.medscan.ui.theme.BackgroundLight
 import com.albarmajy.medscan.ui.theme.PrimaryBlue
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 
 @Composable
@@ -80,6 +79,7 @@ fun DoseTimeItem(
     onUpdateDose: (DoseUiState) -> Unit
 ) {
     var isEditingTime by remember { mutableStateOf(false) }
+
 
     Row(
         modifier = Modifier
@@ -118,7 +118,7 @@ fun DoseTimeItem(
                     fadeIn() togetherWith fadeOut()
                 },
 
-            ) { editing ->
+                ) { editing ->
                 if (editing) {
 
                     InlineTimePicker(
@@ -126,7 +126,6 @@ fun DoseTimeItem(
                         minute = doseState.minute,
                         amPm = doseState.amPm,
                         onConfirm = { h, m, ap ->
-
                             onUpdateDose(doseState.copy(hour = h, minute = m, amPm = ap))
                             isEditingTime = false
                         }
@@ -140,7 +139,6 @@ fun DoseTimeItem(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // الجزء الأيسر: عرض الوقت
                         Column {
                             Text(
                                 text = if (doseState.amPm == "AM") "Morning" else "Evening",
@@ -150,7 +148,12 @@ fun DoseTimeItem(
                             Button(
                                 onClick = {
                                     Log.d("Time", "Opening picker for dose $index")
-                                    isEditingTime = true // لفتح الـ Time Picker
+                                    try {
+                                        isEditingTime = true
+                                    }
+                                    catch (e: Exception){
+                                        Log.d("Time", "Error opening picker for dose $index: ${e.message}")
+                                    }
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = BackgroundLight),
                                 shape = RoundedCornerShape(8.dp),
@@ -163,7 +166,6 @@ fun DoseTimeItem(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                // عرض الوقت المخزن في الـ State
                                 Text(
                                     text = "${processTime(doseState.hour)}:${processTime(doseState.minute)} ${doseState.amPm}",
                                     color = Color.Black,
@@ -228,24 +230,14 @@ fun InlineTimePicker(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Log.d("Time", "state $h ,$m ,$ap")
             WheelPicker(items = (1..12).toList(), initialItem = h) { h = it }
             Text(":", fontWeight = FontWeight.Bold, fontSize = 24.sp)
-            // عجلة الدقائق (0-59)
             WheelPicker(items = (0..59).toList(), initialItem = m, format = "%02d") { m = it }
-            // عجلة AM/PM
             WheelPicker(items = listOf("AM", "PM"), initialItem = ap) { ap = it }
         }
 
-//        Button(
-//            onClick = { onConfirm(h, m, ap) },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(40.dp),
-//            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-//            shape = RoundedCornerShape(8.dp)
-//        ) {
-//            Text("Done", fontSize = 14.sp)
-//        }
+
     }
 }
 
@@ -258,7 +250,6 @@ fun <T> WheelPicker(
     onItemSelected: (T) -> Unit
 ) {
     val context = LocalContext.current
-    val itemHeightPx = with(LocalDensity.current) { 40.dp.toPx() } // يجب أن يطابق الـ height في الـ Modifier
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = items.indexOf(initialItem))
     val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
     val scope = rememberCoroutineScope()
@@ -271,7 +262,7 @@ fun <T> WheelPicker(
             if (visibleItemsInfo.isEmpty()) 0
             else {
                 val fullyVisibleCenter = layoutInfo.viewportStartOffset + (layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset) / 2
-                visibleItemsInfo.minByOrNull { Math.abs((it.offset + it.size / 2) - fullyVisibleCenter) }?.index ?: 0
+                visibleItemsInfo.minByOrNull { abs((it.offset + it.size / 2) - fullyVisibleCenter) }?.index ?: 0
             }
         }
     }
@@ -282,7 +273,6 @@ fun <T> WheelPicker(
         }
     }
 
-    // 2. تحديث الحالة فقط عندما يتغير الـ centerIndex
     LaunchedEffect(centerIndex) {
         if (centerIndex in items.indices) {
             onItemSelected(items[centerIndex])
@@ -292,7 +282,6 @@ fun <T> WheelPicker(
     Box(modifier = Modifier
         .width(65.dp)
         .height(120.dp), contentAlignment = Alignment.Center) {
-        // مؤشر التحديد (الخلفية)
         Box(modifier = Modifier
             .fillMaxWidth()
             .height(40.dp)
@@ -301,7 +290,6 @@ fun <T> WheelPicker(
         LazyColumn(
             state = listState,
             flingBehavior = flingBehavior,
-            // نستخدم Padding عمودي لضمان أن أول وأخر عنصر يمكن أن يصلا للمنتصف
             contentPadding = PaddingValues(vertical = 40.dp),
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -316,7 +304,7 @@ fun <T> WheelPicker(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = if (isSelected) PrimaryBlue else Color.LightGray.copy(alpha = 0.6f),
                     modifier = Modifier
-                        .height(40.dp) // تثبيت الارتفاع ضروري جداً لدقة الحساب
+                        .height(40.dp)
                         .fillMaxWidth()
                         .wrapContentHeight()
                         .clickable(
@@ -337,5 +325,5 @@ fun <T> WheelPicker(
 @Preview
 @Composable
 private fun DoseTimeItemPreview() {
-    DoseTimeItem(index = 1, doseState = DoseUiState(id = 1, hour = 8), onUpdateDose = {})
+    DoseTimeItem(index = 1, doseState = DoseUiState(id = 1, hour = 8, minute = 0, amPm = "AM"), onUpdateDose = {})
 }

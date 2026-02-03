@@ -88,7 +88,7 @@ fun DashboardScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp, 26.dp, 16.dp, 16.dp)
+            .padding(16.dp, 26.dp, 16.dp )
     ) {
         item { HeaderSection() }
         item { DailyOverviewCard(viewModel) }
@@ -114,6 +114,20 @@ fun DashboardScreen(
                 }
                                                                           },
                 {})
+        }
+        if (doses.isEmpty()){
+
+            item{
+                Column(){
+                    Spacer(modifier = Modifier.height(72.dp))
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            "No Active Medication Scheduled",
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                }
+            }
         }
     }
 }

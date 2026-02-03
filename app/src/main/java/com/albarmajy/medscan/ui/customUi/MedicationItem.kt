@@ -163,8 +163,12 @@ fun MedicationItem(
                         isDoseWindow -> "Time to take it (Now)"
                         isTooEarly ->if (minutesDifference > 120){
                            "at ${doseTime.format(formatter)}"
-                        }else{
+                        }
+                        else if (minutesDifference > 60){
                             "Starts in ${minutesDifference / 60}h ${minutesDifference % 60}m"
+                        }
+                        else{
+                            "Starts in ${minutesDifference % 60}m"
                         }
                         else -> "${doseTime.format(DateTimeFormatter.ofPattern("hh:mm a"))} • Scheduled"
                     }
