@@ -14,8 +14,12 @@ sealed interface Routes: NavKey {
 
     @Serializable data object Scanner : NavKey
 
+    @Serializable data object AddMedicationManually : NavKey
+
     @Serializable data class MedicationPlan(val medId: Long) : NavKey
 
     @Serializable data class MedicationDetails(val medId: Long) : NavKey
+
+    @Serializable data class ResolveMatches(val name: String) : NavKey
 
 }

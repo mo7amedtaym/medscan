@@ -31,6 +31,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
+import com.albarmajy.medscan.ui.screens.AddMedicationManuallyScreen
 import com.albarmajy.medscan.ui.screens.CameraScannerScreen
 import com.albarmajy.medscan.ui.screens.DashboardScreen
 import com.albarmajy.medscan.ui.screens.MedicationCalendarScreen
@@ -48,7 +49,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
     val backStack = rememberNavBackStack(Routes.Dashboard)
-    var currentRoute = backStack.lastOrNull()
+    val currentRoute = backStack.lastOrNull()
     val mainRoutes = listOf(Routes.Dashboard, Routes.Calendar, Routes.Medicines, Routes.Settings)
     val shouldShowBottomBar = currentRoute in mainRoutes
 
@@ -103,10 +104,17 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
                     is Routes.Scanner -> NavEntry(key) {
                         CameraScannerScreen(onTextScanned = { result ->
                             viewModel.onTextScanned(result) { matchedMedicine ->
-                                viewModel.saveMedication(matchedMedicine)
+                                viewModel.saveMedication(matchedMedicine.toMedication())
                                 backStack.removeAt(backStack.size - 1)
                                 backStack.add(Routes.MedicationPlan(matchedMedicine.id.toLong()))
-                            }
+                            }},
+                            onAddManually = {
+                                backStack.removeAt(backStack.size - 1)
+                                backStack.add(Routes.AddMedicationManually)
+                            },
+                            onClose = {
+                                backStack.removeAt(backStack.size - 1)
+
                         })
                     }
 
@@ -136,10 +144,25 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
                                 backStack.add(Routes.MedicationPlan(medId))
                             })
                     }
+
+                    is Routes.ResolveMatches -> NavEntry(key) {
+
+                    }
+
+                    is Routes.AddMedicationManually -> NavEntry(key) {
+                        AddMedicationManuallyScreen(
+                            onBack = { backStack.removeAt(backStack.lastIndex) },
+                            onContinue = {
+                                viewModel.saveMedication(it)
+                                backStack.removeAt(backStack.size - 1)
+                                backStack.add(Routes.MedicationPlan(it.id))
+                            },
+                        )
+                    }
                     else -> error("unknown NavKey: $key")
                 }
             },
-            modifier = Modifier.padding(innerPadding).background(BackgroundLight) // هام جداً لكي لا تظهر الشاشات خلف الـ Nav Bar
+            modifier = Modifier.padding(innerPadding).background(BackgroundLight)
         )
     }
 }

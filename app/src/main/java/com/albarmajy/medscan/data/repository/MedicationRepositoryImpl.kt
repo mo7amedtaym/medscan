@@ -33,6 +33,9 @@ class MedicationRepositoryImpl(
     override fun getPausedMedicationsWithPlans(): Flow<List<MedicationWithPlan>> = medicationDao.getPausedMedicationsWithPlans()
 
     override fun searchMedicationsWithPlans(query: String): Flow<List<MedicationWithPlan>> = medicationDao.searchMedicationsWithPlans(query)
+    override suspend fun updatePlanEndDate(planId: Long) {
+        medicationDao.updatePlanEndDate(planId, LocalDate.now())
+    }
 
 
     override suspend fun updateMedicationStatus(medId: Long, status: Boolean) {
@@ -203,7 +206,7 @@ class MedicationRepositoryImpl(
         medicationId: Long,
         currentTime: LocalDateTime
     ) {
-        medicationDao.deleteFutureDoses(medicationId, currentTime)
+        doseDao.deleteFutureDoses(medicationId, currentTime)
     }
 
 

@@ -67,12 +67,12 @@ interface MedicationDao {
     @Query("DELETE FROM medication_plans WHERE id = :planId")
     suspend fun deletePlan(planId: Long)
 
-    @Query("UPDATE medication_plans SET endDate = :endDate, isPermanent = 0 WHERE id = :planId")
+    @Query("""
+        UPDATE medication_plans 
+        SET endDate = :endDate, isPermanent = 0 
+        WHERE id = :planId AND (endDate IS NULL OR endDate > :endDate)
+    """)
     suspend fun updatePlanEndDate(planId: Long, endDate: LocalDate)
-
-    @Query("DELETE FROM dose_logs WHERE medicationId = :medId AND scheduledTime > :now")
-    suspend fun deleteFutureDoses(medId: Long, now: LocalDateTime)
-
 
 
     @Insert
@@ -152,5 +152,9 @@ interface DoseLogDao {
 
     @Query("SELECT * FROM dose_logs WHERE planId = :planId")
     suspend fun getDosesForPlan(planId: Long): List<DoseLogEntity>
+
+    @Query("DELETE FROM dose_logs WHERE planId = :planId AND scheduledTime > :now")
+    suspend fun deleteFutureDoses(planId: Long, now: LocalDateTime)
+
 }
 

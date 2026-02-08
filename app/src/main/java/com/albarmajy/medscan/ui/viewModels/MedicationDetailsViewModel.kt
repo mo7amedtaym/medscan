@@ -30,4 +30,10 @@ class MedicationDetailsViewModel(
             repository.deleteMedication(medId)
         }
     }
+    fun endMedicationPlan() {
+        viewModelScope.launch {
+            repository.updatePlanEndDate(medId)
+            repository.deleteFutureDoses(medId)
+        }
+    }
 }

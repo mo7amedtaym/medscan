@@ -57,15 +57,15 @@ fun MainAppEntryPoint(viewModel: DashboardViewModel = koinViewModel()) {
         BackHandler { isCameraVisible = false }
         if (cameraPermissionState.status.isGranted) {
 
-            CameraScannerScreen(onTextScanned = { result ->
-                viewModel.onTextScanned(result) { matchedMedicine ->
-                    Log.d("camera","Scanned Medication: $matchedMedicine")
-                    scannedMedicine = matchedMedicine
-                    scannedName = matchedMedicine.trade_name_ar
-                    isCameraVisible = false
-                    showDialog = true
-                }
-            })
+//            CameraScannerScreen(onTextScanned = { result ->
+//                viewModel.onTextScanned(result) { matchedMedicine ->
+//                    Log.d("camera","Scanned Medication: $matchedMedicine")
+//                    scannedMedicine = matchedMedicine
+//                    scannedName = matchedMedicine.trade_name_ar
+//                    isCameraVisible = false
+//                    showDialog = true
+//                }
+//            })
 
         }
         else {
@@ -80,19 +80,19 @@ fun MainAppEntryPoint(viewModel: DashboardViewModel = koinViewModel()) {
 //            viewModel = viewModel,
 //        )
     }
-
-    if (showDialog) {
-        BackHandler { isCameraVisible = false }
-        AddMedicationDialog(
-            medicineName = scannedName,
-            onConfirm = { interval ->
-
-                viewModel.saveMedication(scannedMedicine)
-                showDialog = false
-            },
-            onDismiss = { showDialog = false }
-        )
-    }
+//
+//    if (showDialog) {
+//        BackHandler { isCameraVisible = false }
+//        AddMedicationDialog(
+//            medicineName = scannedName,
+//            onConfirm = { interval ->
+//
+//                viewModel.saveMedication(scannedMedicine)
+//                showDialog = false
+//            },
+//            onDismiss = { showDialog = false }
+//        )
+//    }
 }
 
 @RequiresApi(Build.VERSION_CODES.Q)

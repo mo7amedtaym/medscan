@@ -18,6 +18,7 @@ interface MedicationRepository {
     fun getActiveMedicationsWithPlans(): Flow<List<MedicationWithPlan>>
     fun getPausedMedicationsWithPlans(): Flow<List<MedicationWithPlan>>
     fun searchMedicationsWithPlans(query: String): Flow<List<MedicationWithPlan>>
+    suspend fun updatePlanEndDate(planId: Long)
     suspend fun updateMedicationStatus(medId: Long, status: Boolean)
     fun getAllMedications(): Flow<List<MedicationEntity>>
     suspend fun getMedicationById(id: Long): MedicationEntity?
@@ -54,6 +55,7 @@ interface MedicationRepository {
 
     suspend fun deletePlan(plan: MedicationPlanEntity)
     suspend fun updatePlanEndDate(planId: Long, newEndDate: LocalDate)
-    suspend fun deleteFutureDoses(medicationId: Long, currentTime: LocalDateTime)
+    suspend fun deleteFutureDoses(medicationId: Long, currentTime: LocalDateTime = LocalDateTime.now())
+
 
 }

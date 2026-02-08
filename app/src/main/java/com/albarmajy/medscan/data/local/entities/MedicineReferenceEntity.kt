@@ -12,7 +12,13 @@ data class MedicineReferenceEntity(
     val form: String,
     val strength: String,
 
-
-
-
-)
+){
+    fun toMedication(): MedicationEntity{
+        return MedicationEntity(
+            id = id.toLong(),
+            name = trade_name_en,
+            dosage = strength,
+            isActive = false,
+        )
+    }
+}

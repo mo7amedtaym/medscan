@@ -67,14 +67,14 @@ fun MedicationPlanContent(
 ) {
     val medication = medicationWithPlan?.medication
     val plan = medicationWithPlan?.plan
-    var doseFrequency by remember { mutableIntStateOf(plan?.timesOfDay?.size ?: 3) }
+    var doseFrequency by remember { mutableIntStateOf(plan?.timesOfDay?.size ?: 2) }
     var selectedDuration by remember { mutableStateOf(if (plan?.isPermanent == true) "Permanent" else "Fixed") }
     var daysCount by remember { mutableIntStateOf(7) }
 
     var dosesList by remember {
         mutableStateOf(listOf(DoseUiState(id = 0, hour = 7, amPm = "AM"), DoseUiState(id = 1, hour = 15), DoseUiState(id = 2, hour = 23)))
     }
-    Log.d("selectedDuration", selectedDuration)
+    Log.d("selectedDuration", "$selectedDuration, $daysCount")
 
 
 
@@ -167,7 +167,7 @@ fun MedicationPlanContent(
                 }
 
                 item {
-                    DurationPicker(selectedDuration = selectedDuration, daysCount = daysCount, onDurationChange = { selectedDuration = it }, onDaysChange = { daysCount = it })
+                    DurationPicker(selectedDuration = selectedDuration, daysCount = daysCount, onDurationChange = { selectedDuration = it }, onDaysChange = { if (it>30) selectedDuration = "Permanent" else daysCount = it })
                 }
 
                 item { Spacer(modifier = Modifier.height(100.dp)) }

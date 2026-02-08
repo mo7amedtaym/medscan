@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.BackHand
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Create
@@ -42,6 +44,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.TimerOff
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -58,7 +61,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -74,6 +76,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
@@ -85,6 +88,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.room.util.TableInfo
 import com.albarmajy.medscan.domain.model.MedicationFilter
 import com.albarmajy.medscan.ui.customUi.CustomAlert
 import com.albarmajy.medscan.ui.customUi.CustomStatusSwitch
@@ -121,6 +125,7 @@ fun MedicationDetailsScreen(
             viewModel.deleteMedication()
         },
         onEdit = onEdit,
+        onEndPlan = viewModel::endMedicationPlan,
         onToggleStatus = { id, active -> viewModel.toggleMedicationStatus(id, active) },
         onNavigateToCreatePlan = onNavigateToCreatePlan
     )
@@ -132,6 +137,7 @@ fun MedicationDetailsContent(
     onBack: () -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
+    onEndPlan: () -> Unit,
     onToggleStatus: (Long, Boolean) -> Unit,
     onNavigateToCreatePlan: (Long) -> Unit
 ) {
@@ -204,7 +210,7 @@ fun MedicationDetailsContent(
                         instruction = "After food",
                         iconColor = if (med.isActive) PrimaryBlue else TextSub
                     )
-                    PlanSection(plan, onCreateSchedule = onEdit)
+                    PlanSection(plan,onEndPlan = onEndPlan, onCreateSchedule = onEdit)
                     Spacer(modifier = Modifier.height(100.dp))
                 }
             }
@@ -273,7 +279,9 @@ fun InfoCard(icon: ImageVector, label: String, value: String, iconColor: Color, 
 }
 
 @Composable
-fun PlanSection(plan: MedicationPlanEntity?, onCreateSchedule: () -> Unit) {
+fun PlanSection1(plan: MedicationPlanEntity?, onCreateSchedule: () -> Unit, onEndPlan: () -> Unit) {
+    val isPlanEnd = plan?.isPermanent == false && plan.endDate?.isBefore(LocalDate.now()) == true
+
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Medication Plan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         if (plan != null){
@@ -286,11 +294,33 @@ fun PlanSection(plan: MedicationPlanEntity?, onCreateSchedule: () -> Unit) {
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     TimelineItem("Start: ${plan.startDate}", "First dose scheduled", true)
-                    TimelineItem(
-                        "End: ${plan.endDate ?: "Permanent"}",
-                        "Expected completion date",
-                        false
-                    )
+                    if (plan.isPermanent){
+                        TimelineItem("End: Permanent", "Plan will never end", false,{
+                            Button(
+                                onClick = onEndPlan,
+                                colors = ButtonDefaults.buttonColors(containerColor = TextSub),
+                                shape = RoundedCornerShape(12.dp),
+                            )
+                            {
+                                Row{
+                                    Icon(Icons.Default.TimerOff, contentDescription = null, tint = Color.White)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("End Now")
+                                }
+                            }
+
+                        })
+                    }
+                    else if (isPlanEnd){
+                        TimelineItem("End: ${plan.endDate}", "complete", false)
+                    }
+                    else{
+                        TimelineItem(
+                            "End: ${plan.endDate}",
+                            "Expected completion date",
+                            false
+                        )
+                    }
 
                     Divider(modifier = Modifier.padding(vertical = 16.dp))
 
@@ -313,85 +343,190 @@ fun PlanSection(plan: MedicationPlanEntity?, onCreateSchedule: () -> Unit) {
                 }
             }
         }else {
+            NoPlanPlaceholder(onCreateSchedule)
+        }
+    }
+}
+
+@Composable
+fun PlanSection(
+    plan: MedicationPlanEntity?,
+    onCreateSchedule: () -> Unit,
+    onEndPlan: () -> Unit
+) {
+    // التحقق مما إذا كانت الخطة الحالية قد انتهت بالفعل
+    val isPlanExpired = plan?.let {
+        !it.isPermanent && it.endDate != null && it.endDate.isBefore(LocalDate.now())
+    } ?: false
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Medication Plan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+            // إذا كانت الخطة منتهية، نظهر زر لإضافة خطة جديدة بجانب العنوان
+            if (isPlanExpired) {
+                TextButton(onClick = onCreateSchedule) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Renew Plan", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        if (plan != null) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .dashedBorder(
-                        color = Color.LightGray.copy(alpha = 0.5f),
-                        strokeWidth = 4.dp,
-                        dashWidth = 8.dp,
-                        gapWidth = 6.dp,
-                        cornerRadius = 24.dp
-                    )
-
-                ,
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(24.dp)
+                    .padding(top = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isPlanExpired) Color.Gray.copy(alpha = 0.05f) else Color.White
+                ),
+                shape = RoundedCornerShape(16.dp),
+                border = if (isPlanExpired) BorderStroke(1.dp, Color.LightGray) else null
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp, horizontal = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .background(Color(0xFF2094f3).copy(alpha = 0.05f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LibraryAdd,
-                            contentDescription = null,
-                            tint = Color(0xFF2094f3).copy(alpha = 0.4f),
-                            modifier = Modifier.size(32.dp)
-                        )
+                Column(modifier = Modifier.padding(12.dp)) {
+                    // عرض حالة الخطة (نشطة أم مكتملة)
+                    if (isPlanExpired) {
+                        Badge(containerColor = Color.LightGray, contentColor = Color.DarkGray, modifier = Modifier.padding(bottom = 8.dp)) {
+                            Text("COMPLETED PLAN", modifier = Modifier.padding(4.dp))
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    TimelineItem("Start: ${plan.startDate}", "First dose scheduled", true)
+
+                    if (plan.isPermanent) {
+                        TimelineItem("End: Permanent", "Plan will never end", false) {
+                            Button(
+                                onClick = onEndPlan,
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.1f)),
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Default.TimerOff, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("End Plan", color = Color.Red, fontSize = 12.sp)
+                            }
+                        }
+                    } else {
+                        val endSubtitle = if (isPlanExpired) "Plan completed on this date" else "Expected completion date"
+                        TimelineItem("End: ${plan.endDate}", endSubtitle, false)
+                    }
+
+                    Divider(modifier = Modifier.padding(vertical = 16.dp), color = Color.LightGray.copy(alpha = 0.5f))
 
                     Text(
-                        text = "No schedule set",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.Black
+                        "DAILY SCHEDULE",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isPlanExpired) Color.Gray else PrimaryBlue
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "You haven't created a dosing schedule for this medication yet.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // زر إنشاء الخطة
-                    Button(
-                        onClick = onCreateSchedule,
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2094f3)),
-                        shape = RoundedCornerShape(24.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    Row(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            "Create Schedule",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            fontSize = 16.sp
-                        )
+                        plan.timesOfDay.forEach { time ->
+                            val formatter = DateTimeFormatter.ofPattern("hh:mm a")
+                            ScheduleChip(
+                                time = time.format(formatter),
+                                isEnabled = !isPlanExpired // تعتيم الأوقات إذا كانت الخطة منتهية
+                            )
+                        }
                     }
                 }
+            }
+        } else {
+            // كارد "No schedule set" (كما هو لديك مع تعديل بسيط في التصميم)
+            NoPlanPlaceholder(onCreateSchedule)
+        }
+    }
+}
+
+@Composable
+fun NoPlanPlaceholder(onCreateSchedule: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .dashedBorder(
+                color = Color.LightGray.copy(alpha = 0.5f),
+                strokeWidth = 4.dp,
+                dashWidth = 8.dp,
+                gapWidth = 6.dp,
+                cornerRadius = 24.dp
+            )
+
+        ,
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 32.dp, horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .background(Color(0xFF2094f3).copy(alpha = 0.05f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LibraryAdd,
+                    contentDescription = null,
+                    tint = Color(0xFF2094f3).copy(alpha = 0.4f),
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "No schedule set",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "You haven't created a dosing schedule for this medication yet.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // زر إنشاء الخطة
+            Button(
+                onClick = onCreateSchedule,
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2094f3)),
+                shape = RoundedCornerShape(24.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            ) {
+                Text(
+                    "Create Schedule",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
             }
         }
     }
 }
+
+
 @Composable
 fun HeroSection(name: String, subTitle: String, color: Color) {
     Row(
@@ -420,8 +555,8 @@ fun HeroSection(name: String, subTitle: String, color: Color) {
 }
 
 @Composable
-fun TimelineItem(title: String, subtitle: String, isStart: Boolean) {
-    Row(modifier = Modifier.fillMaxWidth()) {
+fun TimelineItem(title: String, subtitle: String, isStart: Boolean, button: @Composable () -> Unit = {}) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = if (!isStart)Alignment.CenterVertically else Alignment.Top) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
                 modifier = Modifier
@@ -447,10 +582,12 @@ fun TimelineItem(title: String, subtitle: String, isStart: Boolean) {
             }
         }
         Spacer(Modifier.width(12.dp))
-        Column {
+        Column(modifier = Modifier.fillMaxHeight()) {
             Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
+        Spacer(Modifier.width(12.dp))
+        button()
     }
 }
 
@@ -486,19 +623,29 @@ fun EditBottomButton(isPlan: Boolean,onEdit: () -> Unit) {
 
 
 @Composable
-fun ScheduleChip(time: String) {
+fun ScheduleChip(time: String, isEnabled: Boolean = true) {
     Surface(
-        color = Color(0xFF2094f3),
+        color = if (isEnabled) PrimaryBlue else Color.LightGray.copy(alpha = 0.5f),
         shape = RoundedCornerShape(12.dp),
-        shadowElevation = 4.dp
+        shadowElevation = if (isEnabled) 4.dp else 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Schedule, contentDescription = null, tint = Color.White)
-            Spacer(Modifier.width(8.dp))
-            Text(time, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Icon(
+                Icons.Default.Schedule,
+                contentDescription = null,
+                tint = if (isEnabled) Color.White else Color.Gray,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = time,
+                color = if (isEnabled) Color.White else Color.Gray,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+            )
         }
     }
 }
@@ -547,16 +694,16 @@ private fun preview() {
         id = 1,
         name = "Panadol",
         dosage = "500mg",
-        isActive = false
+        isActive = true
     )
-    var mockPlan :MedicationPlanEntity? = MedicationPlanEntity(
+    val mockPlan :MedicationPlanEntity? = MedicationPlanEntity(
         medicationId = 1,
         startDate = LocalDate.now(),
-        endDate = LocalDate.now().plusDays(7),
+        endDate = LocalDate.now().plusDays(-1),
         timesOfDay = listOf(LocalTime.of(8, 0), LocalTime.of(20, 0)),
         isPermanent = false
     )
-    mockPlan = null
+
     val mockItem = MedicationWithPlan(mockMed, mockPlan)
 
     MaterialTheme {
@@ -566,6 +713,7 @@ private fun preview() {
             onDelete = {},
             onEdit = {},
             onToggleStatus = { _, _ -> },
+            onEndPlan = {},
             onNavigateToCreatePlan = {}
         )
     }

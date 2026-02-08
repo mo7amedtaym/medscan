@@ -2,13 +2,8 @@ package com.albarmajy.medscan.ui.viewModels
 
 import android.app.Application
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.albarmajy.medscan.data.local.entities.DoseLogEntity
 import com.albarmajy.medscan.data.local.entities.MedicationEntity
 import com.albarmajy.medscan.data.local.entities.MedicationPlanEntity
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
@@ -22,15 +17,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
 
 class DashboardViewModel(
     application: Application,
@@ -78,18 +70,10 @@ class DashboardViewModel(
     }
 
 
-    fun saveMedication(medicine: MedicineReferenceEntity?) {
+    fun saveMedication(medicine: MedicationEntity?) {
         viewModelScope.launch(Dispatchers.IO) {
             medicine?.let { med ->
-                val medication = MedicationEntity(
-                    id = med.id.toLong(),
-                    name = med.trade_name_en,
-                    dosage = med.strength,
-                    isActive = false,
-
-                )
-
-                repository.addNewMedication(medication)
+                repository.addNewMedication(med)
                 withContext(Dispatchers.Main) {
                     Log.d("MedicationSaved", "Medication saved successfully!")
 
