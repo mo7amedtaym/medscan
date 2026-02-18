@@ -1,42 +1,23 @@
 package com.albarmajy.medscan.notification
 
-import android.Manifest
 import android.R
-import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 
-object NotificationHelper {
-    private const val CHANNEL_ID = "medication_channel"
+class NotificationHelper(private val context: Context) {
+    private val channelId = "medication_channel"
 
-    fun createNotificationChannel(context: Context) {
-        val manager = context.getSystemService(NotificationManager::class.java)
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Reminders",
-            NotificationManager.IMPORTANCE_HIGH // تأكد أنها HIGH
-        ).apply {
-            description = "Medication Reminders"
-            enableVibration(true) // الاهتزاز يساعد في إيقاظ العمليات
-            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-        }
-        manager.createNotificationChannel(channel)
-    }
-
-    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-    fun showNotification(context: Context, medicineName: String, doseId: Int) {
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+    fun showNotification(id: Int, medName: String) {
+        val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.alert_dark_frame)
-            .setContentTitle("موعد الجرعة")
-            .setContentText("حان وقت تناول $medicineName")
+            .setContentTitle("حان موعد الدواء")
+            .setContentText("موعد جرعة: $medName")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
+            .build()
 
-        NotificationManagerCompat.from(context).notify(doseId, builder.build())
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(id, notification)
     }
 }

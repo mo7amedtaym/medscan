@@ -367,7 +367,6 @@ fun PlanSection(
         ) {
             Text("Medication Plan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
-            // إذا كانت الخطة منتهية، نظهر زر لإضافة خطة جديدة بجانب العنوان
             if (isPlanExpired) {
                 TextButton(onClick = onCreateSchedule) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
