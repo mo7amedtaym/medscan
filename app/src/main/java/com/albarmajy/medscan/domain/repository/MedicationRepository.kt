@@ -39,6 +39,7 @@ interface MedicationRepository {
         dosagePerDose: String?,
         includePastDoses: Boolean,
     )
+    suspend fun insertDosesAndScheduleAlarms(doses: List<DoseLogEntity>, medName: String)
 
 
     suspend fun updateDoseStatus(doseId: Long, newStatus: DoseStatus)

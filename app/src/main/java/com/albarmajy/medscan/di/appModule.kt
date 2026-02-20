@@ -1,11 +1,11 @@
 package com.albarmajy.medscan.di
 
 import androidx.room.Room
+import com.albarmajy.medscan.data.alarm.AndroidAlarmScheduler
 import com.albarmajy.medscan.data.local.AppDatabase
 import com.albarmajy.medscan.data.local.worker.DoseSystemWorker
 import com.albarmajy.medscan.data.repository.MedicationRepositoryImpl
 import com.albarmajy.medscan.domain.repository.MedicationRepository
-import com.albarmajy.medscan.scheduler.MedicationAlarmScheduler
 import com.albarmajy.medscan.ui.viewModels.CalendarViewModel
 import com.albarmajy.medscan.ui.viewModels.DashboardViewModel
 import com.albarmajy.medscan.ui.viewModels.MedicationDetailsViewModel
@@ -29,7 +29,7 @@ val appModule = module {
     single { AppDatabase.getDatabase(androidContext()) }
     single { get<AppDatabase>().medicationDao() }
     single { get<AppDatabase>().doseLogDao() }
-    single { MedicationAlarmScheduler(androidContext()) }
+    single { AndroidAlarmScheduler(androidContext()) }
     single<MedicationRepository> {
         MedicationRepositoryImpl(get(), get(), get())
     }

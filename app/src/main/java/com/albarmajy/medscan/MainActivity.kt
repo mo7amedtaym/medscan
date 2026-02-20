@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
 class BaseApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        NotificationHelper.createNotificationChannel(this)
+//        NotificationHelper.createNotificationChannel(this)
         startKoin {
             androidContext(this@BaseApplication)
             workManagerFactory()

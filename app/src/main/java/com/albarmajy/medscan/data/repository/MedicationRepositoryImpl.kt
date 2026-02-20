@@ -1,6 +1,7 @@
 package com.albarmajy.medscan.data.repository
 
 import android.util.Log
+import com.albarmajy.medscan.data.alarm.AndroidAlarmScheduler
 import com.albarmajy.medscan.data.local.dao.DoseLogDao
 import com.albarmajy.medscan.data.local.dao.MedicationDao
 import com.albarmajy.medscan.data.local.entities.DoseLogEntity
@@ -10,8 +11,8 @@ import com.albarmajy.medscan.data.local.relation.MedicationWithPlan
 import com.albarmajy.medscan.data.local.entities.MedicineReferenceEntity
 import com.albarmajy.medscan.domain.model.DoseStatus
 import com.albarmajy.medscan.data.local.relation.DoseWithMedication
+import com.albarmajy.medscan.domain.alarm.MedicationAlarm
 import com.albarmajy.medscan.domain.repository.MedicationRepository
-import com.albarmajy.medscan.scheduler.MedicationAlarmScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
@@ -21,7 +22,7 @@ import java.time.LocalTime
 class MedicationRepositoryImpl(
     private val medicationDao: MedicationDao,
     private val doseDao: DoseLogDao,
-    private val alarmScheduler: MedicationAlarmScheduler
+    private val alarmScheduler: AndroidAlarmScheduler
 ) : MedicationRepository {
     override fun getMedicationWithPlanById(id: Long): Flow<MedicationWithPlan?> {
         return medicationDao.getMedicationWithPlanById(id)
@@ -111,6 +112,8 @@ class MedicationRepositoryImpl(
     ) {
         val planId = medicationDao.insertMedicationPlan(plan)
 
+        val medication = medicationDao.getMedicationById(plan.medicationId)
+
         val calculationEndDate = if (plan.isPermanent) {
             plan.startDate.plusDays(30)
         } else {
@@ -131,12 +134,32 @@ class MedicationRepositoryImpl(
                         status = DoseStatus.PENDING
                     )
                 )
+
             }
             currentDay = currentDay.plusDays(1)
         }
 
-        medicationDao.insertAllDoses(generatedDoses)
+        insertDosesAndScheduleAlarms(generatedDoses, medication?.name ?: "the medication")
     }
+
+    override suspend fun insertDosesAndScheduleAlarms(
+        doses: List<DoseLogEntity>,
+        medName: String
+    ) {
+        val generatedIds = medicationDao.insertAllDoses(doses)
+        doses.zip(generatedIds).forEach { (dose,it) ->
+
+            val alarmItem = MedicationAlarm(
+                id = it.toInt(),
+                time = dose.scheduledTime,
+                medName = medName
+            )
+
+            alarmScheduler.schedule(alarmItem)
+        }
+    }
+
+
 
     override suspend fun updateDoseStatus(
         doseId: Long,
@@ -187,7 +210,7 @@ class MedicationRepositoryImpl(
 
             generatedDoses.forEachIndexed { index, dose ->
                 val assignedId = newIds[index]
-                alarmScheduler.schedule(dose.copy(id = assignedId), medicationName)
+//                alarmScheduler.schedule(dose.copy(id = assignedId), medicationName)
             }
         }
 

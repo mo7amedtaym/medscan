@@ -75,8 +75,10 @@ interface MedicationDao {
     suspend fun updatePlanEndDate(planId: Long, endDate: LocalDate)
 
 
-    @Insert
-    suspend fun insertAllDoses(doses: List<DoseLogEntity>)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllDoses(doses: List<DoseLogEntity>): List<Long>
+
+
 
     @Query("SELECT * FROM medications WHERE isActive = 1")
     fun getAllActiveMedications(): Flow<List<MedicationEntity>>
