@@ -9,12 +9,12 @@
 
 | **Home & Daily Doses** | **Treatment Calendar** | **Medication Inventory** |
 |:---:|:---:|:---:|
-| ![Home](https://via.placeholder.com/300x600?text=Home+Screen) | ![Calendar](https://via.placeholder.com/300x600?text=Calendar+View) | ![Meds](https://via.placeholder.com/300x600?text=Meds+Inventory) |
+| ![Home](screenshots/home.jpg) | ![Calendar](screenshots/calender.jpg) | ![Meds](screenshots/meds.jpg) |
 | *Real-time dose tracking.* | *Visual timeline of plans.* | *Manage all medications.* |
 
-| **AI Camera Entry (OCR)** | **Manual Add Form** | **Plan & Schedule Editor** |
-|:---:|:---:|:---:|
-| ![Camera](https://via.placeholder.com/300x600?text=AI+Camera+Scan) | ![Manual](https://via.placeholder.com/300x600?text=Manual+Entry) | ![Plan](https://via.placeholder.com/300x600?text=Plan+Editor) |
+| **AI Camera Entry (OCR)** | **Manual Add Form** | **Plan & Schedule Editor** | **Details of Medication & Plan** |
+|:---:|:---:|:---:|:---:|
+| ![Camera](screenshots/ocr.jpg) | ![Manual](screenshots/manual.jpg) | ![Plan](screenshots/med_plan.jpg) | ![Details](screenshots/med_preview.jpg) |
 | *Auto-scan via Camera.* | *Detailed manual input.* | *Custom scheduling logic.* |
 
 ---
