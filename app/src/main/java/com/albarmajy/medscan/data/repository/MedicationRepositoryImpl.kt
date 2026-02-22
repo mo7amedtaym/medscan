@@ -96,6 +96,9 @@ class MedicationRepositoryImpl(
         medicationDao.updateDoseLog(doseLog)
     }
 
+    override suspend fun updateDoseStatusById(id: Long, status: DoseStatus, time: LocalDateTime?) {
+        medicationDao.updateDoseStatus(id, status, time)
+    }
     override suspend fun searchMedicineInReference(query: String): MedicineReferenceEntity? {
         val firstWord = query.split(" ").firstOrNull() ?: return null
 

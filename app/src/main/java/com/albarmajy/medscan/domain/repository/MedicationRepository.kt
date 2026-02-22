@@ -31,6 +31,9 @@ interface MedicationRepository {
     suspend fun addNewMedication(medication: MedicationEntity)
 
     suspend fun updateDoseStatus(doseLog: DoseLogEntity)
+    suspend fun updateDoseStatusById(id: Long, status: DoseStatus, time: LocalDateTime?)
+
+
 
     suspend fun searchMedicineInReference(query: String): MedicineReferenceEntity?
 

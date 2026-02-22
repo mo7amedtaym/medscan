@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Medication
@@ -72,15 +73,14 @@ fun NavigationRoot(viewModel: DashboardViewModel = koinViewModel()) {
                     containerColor = PrimaryBlue,
                     contentColor = Color.White,
                     shape = CircleShape,
-                    modifier = Modifier
-                        .offset(y = 85.dp)
-                        .size(64.dp)
+//                    modifier = Modifier
+//                        .offset(y = 85.dp)
+//                        .size(64.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Scan")
+                    Icon(Icons.Default.Camera, contentDescription = "Scan")
                 }
             }
         },
-        floatingActionButtonPosition = FabPosition.Center,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
 
@@ -197,7 +197,7 @@ fun BottomNavigationBar(currentRoute: NavKey, onNavigate: (NavKey) -> Unit) {
             )
         )
 
-        Spacer(Modifier.weight(1f))
+//        Spacer(Modifier.weight(1f))
 
         NavigationBarItem(
             selected = currentRoute is Routes.Medicines,
@@ -212,18 +212,18 @@ fun BottomNavigationBar(currentRoute: NavKey, onNavigate: (NavKey) -> Unit) {
                 unselectedTextColor = Color.Gray,
             )
         )
-        NavigationBarItem(
-            selected = currentRoute is Routes.Settings,
-            onClick = { onNavigate(Routes.Settings) },
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-            label = { Text("Settings") },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = PrimaryBlue,
-                selectedTextColor = PrimaryBlue,
-                indicatorColor = PrimaryBlue.copy(0.3f),
-                unselectedIconColor = TextSub,
-                unselectedTextColor = Color.Gray,
-            )
-        )
+//        NavigationBarItem(
+//            selected = currentRoute is Routes.Settings,
+//            onClick = { onNavigate(Routes.Settings) },
+//            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+//            label = { Text("Settings") },
+//            colors = NavigationBarItemDefaults.colors(
+//                selectedIconColor = PrimaryBlue,
+//                selectedTextColor = PrimaryBlue,
+//                indicatorColor = PrimaryBlue.copy(0.3f),
+//                unselectedIconColor = TextSub,
+//                unselectedTextColor = Color.Gray,
+//            )
+//        )
     }
 }
